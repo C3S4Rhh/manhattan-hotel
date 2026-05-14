@@ -19,7 +19,7 @@ export function Navbar({ usuario }: Props) {
         </div>
         <div>
           <h1 className="text-lg font-black tracking-tighter leading-none uppercase">Manhattan</h1>
-          <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Management System</p>
+          <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest">five star</p>
         </div>
       </div>
 

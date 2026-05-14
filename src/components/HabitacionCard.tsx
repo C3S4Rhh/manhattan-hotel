@@ -7,7 +7,9 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
     const t = tipo?.toLowerCase() || '';
     if (t.includes('simple')) return '👤';
     if (t.includes('doble')) return '👥';
-    if (t.includes('matrimonial')) return '❤️';
+    if (t.includes('matrimonial')) return '💒';
+    if (t.includes('triple')) return '👨‍👩‍👦';   // Icono para Triple
+    if (t.includes('familiar')) return '👨‍👩‍👧‍👦'; // Icono para Familiar
     return '🏨';
   };
 

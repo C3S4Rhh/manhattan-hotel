@@ -1,47 +1,23 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { authService } from '@/services/auth'
-import { habitacionesService } from '@/services/habitaciones'
-import { HabitacionCard } from '@/components/HabitacionCard'
+import { useDashboard } from '@/hook/useDashboard'
+import { useListaHuespedes } from '@/hook/useListaHuespedes'
 import { Navbar } from '@/components/Navbar'
 import { Login } from '@/components/Login'
+import { HabitacionCard } from '@/components/HabitacionCard'
+import { DashboardHeader } from '@/components/DashboardHeader'
+import { PanelHuespedesActivos } from '@/components/PanelHuespedesActivos'
 import { CheckInModal } from '@/components/CheckInModal'
+import { CheckOutModal } from '@/components/CheckOutModal'
 
 export default function Home() {
-  const [habitaciones, setHabitaciones] = useState<any[]>([])
-  const [usuarioActivo, setUsuarioActivo] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  
-  const [mostrarModal, setMostrarModal] = useState(false)
-  const [habSeleccionada, setHabSeleccionada] = useState<any>(null)
+  const {
+    habitacionesFiltradas, usuarioActivo, loading, setUsuarioActivo,
+    mostrarModalIn, setMostrarModalIn, mostrarModalOut, setMostrarModalOut,
+    habSeleccionada, soloOcupadas, setSoloOcupadas, verHuespedes, setVerHuespedes,
+    manejarSeleccion, cargarHabitaciones
+  } = useDashboard()
 
-  useEffect(() => {
-    const user = authService.getCurrentUser()
-    if (user) setUsuarioActivo(user)
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    if (usuarioActivo) cargarHabitaciones()
-  }, [usuarioActivo])
-
-  const cargarHabitaciones = async () => {
-    try {
-      const data = await habitacionesService.getAll()
-      setHabitaciones(data || [])
-    } catch (error) {
-      console.error("Error:", error)
-    }
-  }
-
-  const manejarSeleccion = (hab: any) => {
-    if (hab.estado_actual === 'L') {
-      setHabSeleccionada(hab)
-      setMostrarModal(true)
-    } else {
-      alert("Habitación ocupada")
-    }
-  }
+  const { huespedes } = useListaHuespedes()
 
   if (loading) return <div className="bg-slate-900 min-h-screen" />
   if (!usuarioActivo) return <Login onLoginSuccess={setUsuarioActivo} />
@@ -51,36 +27,50 @@ export default function Home() {
       <Navbar usuario={usuarioActivo} />
       
       <div className="p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">
-            Estado de Habitaciones
-          </h1>
-          <div className="flex gap-4 text-[10px] font-bold uppercase">
-             <span className="flex items-center gap-1"><div className="w-3 h-3 bg-emerald-500 rounded-full" /> Libre</span>
-             <span className="flex items-center gap-1"><div className="w-3 h-3 bg-rose-500 rounded-full" /> Ocupada</span>
-          </div>
-        </div>
+        <DashboardHeader 
+          verHuespedes={verHuespedes}
+          setVerHuespedes={setVerHuespedes}
+          soloOcupadas={soloOcupadas}
+          setSoloOcupadas={setSoloOcupadas}
+          usuarioNombre={usuarioActivo.nombre}
+          cantidadHuespedes={huespedes.length}
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {habitaciones.map(hab => (
-            <HabitacionCard 
-              key={hab.id} 
-              hab={hab} 
-              onSelect={manejarSeleccion} 
-            />
-          ))}
+        <div className="flex gap-6">
+          {!verHuespedes ? (
+            <div className="grid grid-cols-6 gap-4 flex-1">
+              {habitacionesFiltradas.map(hab => (
+                <HabitacionCard key={hab.id} hab={hab} onSelect={manejarSeleccion} />
+              ))}
+            </div>
+          ) : (
+            <div className="w-full flex justify-center">
+              <div className="w-full max-w-4xl">
+                <PanelHuespedesActivos />
+              </div>
+            </div>
+          )}
         </div>
+        
+        {!verHuespedes && soloOcupadas && habitacionesFiltradas.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 font-bold">
+            No hay habitaciones ocupadas en este momento.
+          </div>
+        )}
       </div>
 
-      {mostrarModal && (
+      {mostrarModalIn && (
         <CheckInModal 
+          hab={habSeleccionada} usuario={usuarioActivo}
+          onClose={() => setMostrarModalIn(false)}
+          onSuccess={() => { setMostrarModalIn(false); cargarHabitaciones(); }}
+        />
+      )}
+      {mostrarModalOut && (
+        <CheckOutModal 
           hab={habSeleccionada}
-          usuario={usuarioActivo}
-          onClose={() => setMostrarModal(false)}
-          onSuccess={() => {
-            setMostrarModal(false)
-            cargarHabitaciones()
-          }}
+          onClose={() => setMostrarModalOut(false)}
+          onSuccess={() => { setMostrarModalOut(false); cargarHabitaciones(); }}
         />
       )}
     </main>
