@@ -132,7 +132,8 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
             profesion: h.profesion,
             celular: h.celular,
             nacionalidad: h.nacionalidad,
-            fecha_nacimiento: h.fecha_nacimiento
+            fecha_nacimiento: h.fecha_nacimiento,
+            ultima_visita: new Date().toISOString()
           }, { onConflict: 'documento' })
           .select().single();
 
