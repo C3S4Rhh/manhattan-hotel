@@ -6,7 +6,7 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
   const {
     numPersonas, huespedes, fechaIngreso, precioFinal, adelanto, cargando,
     setPrecioFinal, setAdelanto, setFechaIngreso,
-    manejarCambioPersonas, actualizarHuesped, registrarIngreso
+    manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso // <-- Agregada la función de autocompletado
   } = useCheckIn(hab, usuario, onSuccess);
 
   // Determinar el nombre a mostrar en el badge inferior
@@ -76,7 +76,13 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
           <div className="space-y-4 border-t border-slate-100 pt-4">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Fichas de Clientes</p>
             {huespedes.map((h, i) => (
-              <GuestForm key={i} index={i} huesped={h} onChange={actualizarHuesped} />
+              <GuestForm 
+                key={i} 
+                index={i} 
+                huesped={h} 
+                onChange={actualizarHuesped} 
+                onAutoCompletar={autoCompletarHuesped} // <-- Conexión final del autocompletado
+              />
             ))}
           </div>
 

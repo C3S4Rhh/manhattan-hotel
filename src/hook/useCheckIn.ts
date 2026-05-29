@@ -1,12 +1,28 @@
 /**
- * Hook de check_ins optimizado para Bolivia
+ * Hook de check_ins optimizado para Bolivia con validación de edad, nacionalidad y autocompletado
  */
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
+// Función auxiliar para calcular la edad exacta en base a la fecha de nacimiento
+const calcularEdad = (fechaNacimiento: string): number => {
+  if (!fechaNacimiento) return 0;
+  const hoy = new Date();
+  const cumpleanos = new Date(fechaNacimiento);
+  let edad = hoy.getFullYear() - cumpleanos.getFullYear();
+  const mes = hoy.getMonth() - cumpleanos.getMonth();
+  
+  if (mes < 0 || (mes === 0 && hoy.getDate() < cumpleanos.getDate())) {
+    edad--;
+  }
+  return edad;
+};
+
 export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
   const [numPersonas, setNumPersonas] = useState(1);
-  const [huespedes, setHuespedes] = useState([{ nombre: '', documento: '', profesion: '', celular: '' }]);
+  const [huespedes, setHuespedes] = useState([
+    { nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '' }
+  ]);
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [precioFinal, setPrecioFinal] = useState(hab?.precio_base || 0);
   const [adelanto, setAdelanto] = useState(0); 
@@ -24,7 +40,9 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     setNumPersonas(n);
     const nuevoArray = [...huespedes];
     if (n > huespedes.length) {
-      while (nuevoArray.length < n) nuevoArray.push({ nombre: '', documento: '', profesion: '', celular: '' });
+      while (nuevoArray.length < n) {
+        nuevoArray.push({ nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '' });
+      }
     } else {
       nuevoArray.splice(n);
     }
@@ -37,12 +55,29 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     setHuespedes(nuevosHuespedes);
   };
 
+  // FUNCIÓN NUEVA: Inyecta los datos del cliente frecuente recuperados desde Supabase
+  const autoCompletarHuesped = (index: number, datosCompletos: any) => {
+    const nuevosHuespedes = [...huespedes];
+    nuevosHuespedes[index] = datosCompletos;
+    setHuespedes(nuevosHuespedes);
+  };
+
   const registrarIngreso = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cargando) return;
+    
+    // --- LÓGICA DE VALIDACIÓN DE EDAD (REGLA DE NEGOCIO) ---
+    const edades = huespedes.map(h => calcularEdad(h.fecha_nacimiento));
+    const tieneMenorDeEdad = edades.some(edad => edad < 18);
+    const tieneAdultoAcompanante = edades.some(edad => edad >= 18);
+
+    if (tieneMenorDeEdad && !tieneAdultoAcompanante) {
+      alert("❌ REGISTRO DENEGADO: Los menores de 18 años no pueden ingresar solos. Es obligatorio que estén acompañados por lo menos de un adulto responsable.");
+      return;
+    }
+
     setCargando(true);
     
-    // El "Cesar" del sistema si no hay usuario logueado
     const nombreResponsable = usuario?.nombre || usuario?.user_metadata?.nombre || 'Cesar';
     const saldo = Number(precioFinal) - Number(adelanto);
 
@@ -60,8 +95,8 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
           saldo_total: saldo,
           estado: 'activo',
           fecha_ingreso: fechaIngreso,
-          responsable: nombreResponsable, // <--- Evita el S/N
-          recepcionista: nombreResponsable, // Por compatibilidad con tu esquema
+          responsable: nombreResponsable, 
+          recepcionista: nombreResponsable, 
           hora_ingreso: new Date().toLocaleTimeString('en-GB') 
         }])
         .select().single();
@@ -91,7 +126,14 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
 
         const { data: cliente, error: errorCli } = await supabase
           .from('clientes')
-          .upsert({ ...h }, { onConflict: 'documento' })
+          .upsert({
+            nombre: h.nombre,
+            documento: h.documento,
+            profesion: h.profesion,
+            celular: h.celular,
+            nacionalidad: h.nacionalidad,
+            fecha_nacimiento: h.fecha_nacimiento
+          }, { onConflict: 'documento' })
           .select().single();
 
         if (errorCli) throw errorCli;
@@ -120,6 +162,6 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
   return {
     numPersonas, huespedes, fechaIngreso, precioFinal, adelanto, cargando,
     setPrecioFinal, setAdelanto, setFechaIngreso,
-    manejarCambioPersonas, actualizarHuesped, registrarIngreso
+    manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso // <-- Exportado con éxito
   };
 }

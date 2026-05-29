@@ -96,7 +96,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* 3. VISTA: REGISTRO DE CLIENTES (CORREGIDA) */}
+        {/* 3. VISTA: REGISTRO DE CLIENTES */}
         {vista === 'clientes' && (
           <div className="space-y-4">
             <button 
@@ -105,7 +105,6 @@ export default function Home() {
             >
               ← Volver al Mapa de Habitaciones
             </button>
-            {/* Pasamos todosLosClientes en lugar de huespedes para ver los datos de Supabase */}
             <ListaClientesRegistrados clientes={todosLosClientes} />
           </div>
         )}
@@ -115,12 +114,14 @@ export default function Home() {
       {/* Modales */}
       {mostrarModalIn && (
         <CheckInModal 
-          hab={habSeleccionada} usuario={usuarioActivo}
+          hab={habSeleccionada} 
+          usuario={usuarioActivo}
+          clientesHistoricos={todosLosClientes} // <-- PASAMOS LA LISTA HISTÓRICA AQUÍ
           onClose={() => setMostrarModalIn(false)}
           onSuccess={() => { 
             setMostrarModalIn(false); 
             cargarHabitaciones(); 
-            refrescarClientes(); // Actualiza la lista si se crea un cliente nuevo
+            refrescarClientes(); // Actualiza la lista si se crea o modifica un cliente
           }}
         />
       )}
