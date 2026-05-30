@@ -1,83 +1,124 @@
 'use client'
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-
-interface Movimiento {
-  id: string;
-  fecha: string;
-  observaciones: string;
-  monto_total: number;
-}
 
 export function ReportesFinancieros() {
-  const [data, setData] = useState<Movimiento[]>([]); 
+  const [data, setData] = useState<any[]>([]); 
   const [rango, setRango] = useState({ inicio: '', fin: '' });
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [responsableId, setResponsableId] = useState('todos');
 
-  // Lógica para transformar los movimientos en datos para el gráfico (agrupados por mes)
-  const datosGrafico = useMemo(() => {
-    const resumen: Record<string, number> = {};
-    data.forEach(m => {
-      const mes = new Date(m.fecha).toLocaleString('es-ES', { month: 'short' });
-      resumen[mes] = (resumen[mes] || 0) + Number(m.monto_total);
-    });
-    return Object.keys(resumen).map(mes => ({ mes, ganancias: resumen[mes] }));
-  }, [data]);
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      const { data } = await supabase.from('usuarios').select('id, nombre');
+      setUsuarios(data || []);
+    };
+    fetchUsuarios();
+  }, []);
 
   const cargarDatos = async () => {
-    let query = supabase.from('caja_movimientos').select('*');
+    let query = supabase
+      .from('caja_movimientos')
+      .select('*, usuarios(nombre)')
+      .order('fecha', { ascending: false });
+
     if (rango.inicio) query = query.gte('fecha', rango.inicio);
     if (rango.fin) query = query.lte('fecha', rango.fin);
+    if (responsableId !== 'todos') query = query.eq('id_usuario', responsableId);
     
-    const { data: resultados, error } = await query.order('fecha', { ascending: true });
-    
+    const { data: resultados, error } = await query;
     if (error) console.error("Error:", error);
     else setData(resultados || []);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* SECCIÓN DE GRÁFICO */}
-      <div className="h-80 w-full bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="font-black text-slate-700 mb-4 uppercase text-xs tracking-widest">Ganancias por Mes</h3>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={datosGrafico}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="mes" fontSize={12} />
-            <YAxis fontSize={12} />
-            <Tooltip />
-            <Bar dataKey="ganancias" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+  const totalGeneral = useMemo(() => {
+    return data.reduce((sum, item) => sum + Number(item.monto_total || 0), 0);
+  }, [data]);
 
-      {/* SECCIÓN DE TABLA */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <div className="flex justify-between items-center mb-6 no-print">
-          <h1 className="text-lg font-black uppercase tracking-tight">Reporte de Ingresos</h1>
-          <div className="flex gap-2">
-            <input type="date" onChange={e => setRango({...rango, inicio: e.target.value})} className="border rounded-xl p-2 text-xs" />
-            <input type="date" onChange={e => setRango({...rango, fin: e.target.value})} className="border rounded-xl p-2 text-xs" />
-            <button onClick={cargarDatos} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase">Consultar</button>
-            <button onClick={() => window.print()} className="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase">Imprimir</button>
+ return (
+    <>
+      <style jsx global>{`
+        @media print {
+          /* Eliminamos absolutamente todos los márgenes de página */
+          @page { margin: 0; size: auto; }
+          
+          /*body { margin: 0 !important; padding: 0 !important; }*/
+          body { 
+      margin: 0 !important; 
+      padding: 0 !important; 
+      /* Instrucción clave: escala el contenido hacia abajo si es necesario */
+      zoom: 85%; 
+    }
+          .no-print { display: none !important; }
+          
+          /* Ocultamos todo excepto el reporte */
+          body * { visibility: hidden; }
+          #reporte-imprimible, #reporte-imprimible * { visibility: visible; }
+          
+          #reporte-imprimible { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            padding: 20px !important; 
+          }
+          
+          /* Evitamos que la tabla o el total fuercen un salto de página */
+          table, tr, td, tfoot { break-inside: avoid; }
+          
+          .print-center { text-align: center; display: block !important; }
+        }
+      `}</style>
+
+      <div className="p-6 bg-slate-50 min-h-screen">
+        <div id="reporte-imprimible" className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 max-w-6xl mx-auto">
+          
+          <div className="no-print mb-8 border-b pb-6">
+            <h1 className="text-2xl font-black uppercase tracking-tight">Reporte de Ingresos</h1>
+            <div className="flex gap-2 mt-4 flex-wrap">
+              <input type="date" onChange={e => setRango({...rango, inicio: e.target.value})} className="border rounded-xl p-2 text-xs" />
+              <input type="date" onChange={e => setRango({...rango, fin: e.target.value})} className="border rounded-xl p-2 text-xs" />
+              <select className="border p-2 rounded-xl text-xs font-bold bg-slate-50" onChange={(e) => setResponsableId(e.target.value)}>
+                <option value="todos">Todos los responsables</option>
+                {usuarios.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+              </select>
+              <button onClick={cargarDatos} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase hover:bg-blue-700">Consultar</button>
+              <button onClick={() => window.print()} className="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase hover:bg-black">Imprimir</button>
+            </div>
           </div>
-        </div>
-        
-        <table className="w-full text-sm">
-          <thead className="text-slate-400 uppercase text-[10px] text-left">
-            <tr><th className="pb-4">Fecha</th><th className="pb-4">Concepto</th><th className="pb-4 text-right">Monto</th></tr>
-          </thead>
-          <tbody>
-            {data.map((m) => (
-              <tr key={m.id} className="border-t border-slate-100">
-                <td className="py-4">{new Date(m.fecha).toLocaleDateString()}</td>
-                <td className="py-4">{m.observaciones}</td>
-                <td className="py-4 text-right font-bold text-emerald-600">{Number(m.monto_total || 0).toFixed(2)} Bs.</td>
+          
+          <div className="hidden print:block print-center mb-8">
+             <h1 className="text-2xl font-black uppercase">Reporte de Ingresos</h1>
+          </div>
+
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-slate-400 uppercase text-[10px] tracking-widest border-b border-slate-200">
+                <th className="pb-4 text-left">Fecha</th>
+                <th className="pb-4 text-left">Concepto</th>
+                <th className="pb-4 text-left">Responsable</th>
+                <th className="pb-4 text-right">Monto</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {data.map((m) => (
+                <tr key={m.id}>
+                  <td className="py-3">{new Date(m.fecha).toLocaleDateString()}</td>
+                  <td className="py-3 text-slate-700">{m.observaciones}</td>
+                  <td className="py-3 font-bold text-slate-600 uppercase text-[10px]">{m.usuarios?.nombre || 'Desconocido'}</td>
+                  <td className="py-3 text-right font-black text-emerald-600">{Number(m.monto_total || 0).toFixed(2)} Bs.</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="border-t-2 border-slate-800">
+              <tr>
+                <td colSpan={3} className="py-4 text-right font-black uppercase tracking-widest text-xs">Total General:</td>
+                <td className="py-4 text-right font-black text-emerald-600 text-lg">{totalGeneral.toFixed(2)} Bs.</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

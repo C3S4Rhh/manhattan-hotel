@@ -31,3 +31,14 @@ body {
   th, td { border: 1px solid #ccc; padding: 12px; }
   h1 { color: black; }
 }
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
