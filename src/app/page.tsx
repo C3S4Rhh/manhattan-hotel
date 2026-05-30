@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useDashboard } from '@/hook/useDashboard'
 import { useListaHuespedes } from '@/hook/useListaHuespedes'
-import { useClientesGlobal } from '@/hook/useClientesGlobal' // Importamos el nuevo hook
+import { useClientesGlobal } from '@/hook/useClientesGlobal' 
 import { Navbar } from '@/components/Navbar'
 import { Login } from '@/components/Login'
 import { HabitacionCard } from '@/components/HabitacionCard'
@@ -12,9 +12,13 @@ import { CheckInModal } from '@/components/CheckInModal'
 import { CheckOutModal } from '@/components/CheckOutModal'
 import { DirectorioHabitaciones } from '@/components/DirectorioHabitaciones'
 import { ListaClientesRegistrados } from '@/components/ListaClientesRegistrados'
+import { ReportesFinancieros } from '@/components/ReportesFinancieros'
+import { PanelCaja } from '@/components/PanelCaja' // <-- Importamos el nuevo módulo de caja
 
 export default function Home() {
-  const [vista, setVista] = useState<'mapa' | 'config' | 'clientes'>('mapa');
+  // Agregamos 'caja' a los tipos de vista permitidos en el estado
+// En Home.tsx, cambia el tipo del estado a:
+const [vista, setVista] = useState<'mapa' | 'config' | 'clientes' | 'caja' | 'datos'>('mapa');
   
   const {
     habitacionesFiltradas, usuarioActivo, loading, setUsuarioActivo,
@@ -34,7 +38,11 @@ export default function Home() {
 
   return (
     <main className="bg-slate-50 min-h-screen">
-      <Navbar usuario={usuarioActivo} />
+      {/* Le pasamos onCajaClick a la cabecera. Al presionarse, 
+        cambiará el estado interno a la vista del control de turnos 
+      */}
+      <Navbar usuario={usuarioActivo} onCajaClick={() => setVista('caja')}
+      onDatosClick={() => setVista('datos')} />
       
       <div className="p-8">
         
@@ -47,10 +55,10 @@ export default function Home() {
               soloOcupadas={soloOcupadas}
               setSoloOcupadas={setSoloOcupadas}
               usuarioNombre={usuarioActivo.nombre}
-              cantidadHuespedes={huespedes.length} // Mantiene el conteo de activos
+              cantidadHuespedes={huespedes.length} 
               onConfigClick={() => setVista('config')}
               onClientesClick={() => {
-                refrescarClientes(); // Refresca la lista global antes de cambiar de vista
+                refrescarClientes(); 
                 setVista('clientes');
               }}
             />
@@ -109,6 +117,28 @@ export default function Home() {
           </div>
         )}
 
+        {/* 4. VISTA: CONTROL DE CAJA Y TURNOS */}
+        {vista === 'caja' && (
+          <div className="space-y-4">
+            <button 
+              onClick={() => setVista('mapa')}
+              className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
+            >
+              ← Volver al Mapa de Habitaciones
+            </button>
+            {/* Renderizamos el panel pasándole el usuario logueado en tiempo real */}
+            <PanelCaja usuario={usuarioActivo} />
+          </div>
+        )}
+    {vista === 'datos' && (
+  <div className="space-y-4">
+    <button onClick={() => setVista('mapa')} className="text-slate-500 font-black uppercase text-[10px] hover:text-slate-800">
+      ← Volver al Mapa de Habitaciones
+    </button>
+    <ReportesFinancieros />
+  </div>
+)}
+
       </div>
 
       {/* Modales */}
@@ -116,12 +146,12 @@ export default function Home() {
         <CheckInModal 
           hab={habSeleccionada} 
           usuario={usuarioActivo}
-          clientesHistoricos={todosLosClientes} // <-- PASAMOS LA LISTA HISTÓRICA AQUÍ
+          clientesHistoricos={todosLosClientes} 
           onClose={() => setMostrarModalIn(false)}
           onSuccess={() => { 
             setMostrarModalIn(false); 
             cargarHabitaciones(); 
-            refrescarClientes(); // Actualiza la lista si se crea o modifica un cliente
+            refrescarClientes(); 
           }}
         />
       )}

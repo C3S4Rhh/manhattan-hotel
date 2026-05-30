@@ -4,14 +4,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
-// Función auxiliar para calcular la edad exacta en base a la fecha de nacimiento
 const calcularEdad = (fechaNacimiento: string): number => {
   if (!fechaNacimiento) return 0;
   const hoy = new Date();
   const cumpleanos = new Date(fechaNacimiento);
   let edad = hoy.getFullYear() - cumpleanos.getFullYear();
   const mes = hoy.getMonth() - cumpleanos.getMonth();
-  
   if (mes < 0 || (mes === 0 && hoy.getDate() < cumpleanos.getDate())) {
     edad--;
   }
@@ -29,7 +27,6 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
   const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
-    // Ajuste de fecha local para Bolivia (UTC-4)
     const ahora = new Date();
     const offset = ahora.getTimezoneOffset() * 60000;
     const localISOTime = new Date(ahora.getTime() - offset).toISOString().slice(0, 16);
@@ -55,10 +52,13 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     setHuespedes(nuevosHuespedes);
   };
 
-  // FUNCIÓN NUEVA: Inyecta los datos del cliente frecuente recuperados desde Supabase
   const autoCompletarHuesped = (index: number, datosCompletos: any) => {
     const nuevosHuespedes = [...huespedes];
-    nuevosHuespedes[index] = datosCompletos;
+    // Asegurar valores por defecto para evitar bloqueos de validación del navegador
+    nuevosHuespedes[index] = { 
+      ...datosCompletos,
+      nacionalidad: datosCompletos.nacionalidad || 'Boliviana'
+    };
     setHuespedes(nuevosHuespedes);
   };
 
@@ -66,13 +66,12 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     e.preventDefault();
     if (cargando) return;
     
-    // --- LÓGICA DE VALIDACIÓN DE EDAD (REGLA DE NEGOCIO) ---
     const edades = huespedes.map(h => calcularEdad(h.fecha_nacimiento));
     const tieneMenorDeEdad = edades.some(edad => edad < 18);
     const tieneAdultoAcompanante = edades.some(edad => edad >= 18);
 
     if (tieneMenorDeEdad && !tieneAdultoAcompanante) {
-      alert("❌ REGISTRO DENEGADO: Los menores de 18 años no pueden ingresar solos. Es obligatorio que estén acompañados por lo menos de un adulto responsable.");
+      alert("❌ REGISTRO DENEGADO: Los menores de 18 años no pueden ingresar solos.");
       return;
     }
 
@@ -82,7 +81,7 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     const saldo = Number(precioFinal) - Number(adelanto);
 
     try {
-      // 1. Registro en tabla 'hospedajes' (Tabla Principal de Operaciones)
+      // 1. Registro en tabla 'hospedajes'
       const { data: hospedaje, error: errorIns } = await supabase
         .from('hospedajes')
         .insert([{
@@ -103,7 +102,7 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
 
       if (errorIns) throw errorIns;
 
-      // 2. Registro en tabla 'check_ins' (Tabla de Auditoría/Historial)
+      // 2. Registro en tabla 'check_ins'
       const { error: errorCheckIn } = await supabase
         .from('check_ins')
         .insert([{
@@ -120,7 +119,38 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
 
       if (errorCheckIn) throw errorCheckIn;
 
-      // 3. Registro de Clientes y Detalle Relacional
+   // 3. REGISTRO EN CAJA (Corregido: Usa precioFinal y formato de observación)
+if (Number(adelanto) > 0) {
+  const { data: sesionAbierta } = await supabase
+    .from('caja_sesiones')
+    .select('id')
+    .eq('estado', 'abierta')
+    .maybeSingle();
+
+  const { error: errorCaja } = await supabase
+    .from('caja_movimientos') 
+    .insert([{
+      id_sesion: sesionAbierta?.id || null,
+      id_usuario: usuario?.id,
+      id_habitacion: hab.id,
+      nro_habitacion: String(hab.numero),
+      tipo_movimiento: 'ingreso',
+      categoria: 'hospedaje_extra', // Asegúrate de usar la categoría correcta que esperas ver
+      monto_total: Number(precioFinal), // Toma el precio total editado
+      monto_a_cuenta: Number(adelanto), // Toma el adelanto registrado
+      monto_saldo: saldo,             // El saldo restante calculado
+      huesped_referencia: huespedes[0].nombre,
+      // Formato de observación idéntico a tus registros anteriores
+      observaciones: `Adelanto Check-In Hab. #${hab?.numero} - Con deuda - Queda pendiente un saldo de ${saldo} Bs.`,
+      fecha: new Date().toISOString()
+    }]);
+
+  if (errorCaja) {
+    console.error("Error al registrar en caja_movimientos:", errorCaja);
+  }
+}
+
+      // 4. Registro de Clientes y Detalle Relacional
       for (const h of huespedes) {
         if (!h.nombre || !h.documento) continue;
 
@@ -131,8 +161,8 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
             documento: h.documento,
             profesion: h.profesion,
             celular: h.celular,
-            nacionalidad: h.nacionalidad,
-            fecha_nacimiento: h.fecha_nacimiento,
+            nacionalidad: h.nacionalidad || 'Boliviana',
+            fecha_nacimiento: h.fecha_nacimiento || null,
             ultima_visita: new Date().toISOString()
           }, { onConflict: 'documento' })
           .select().single();
@@ -146,7 +176,7 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
         });
       }
 
-      // 4. Actualizar estado de habitación a 'ocupado'
+      // 5. Actualizar habitación
       await supabase.from('habitaciones')
         .update({ estado_actual: 'O' })
         .eq('id', hab.id);
@@ -163,6 +193,6 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
   return {
     numPersonas, huespedes, fechaIngreso, precioFinal, adelanto, cargando,
     setPrecioFinal, setAdelanto, setFechaIngreso,
-    manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso // <-- Exportado con éxito
+    manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso
   };
 }

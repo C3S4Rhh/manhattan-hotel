@@ -1,27 +1,28 @@
 'use client'
 import { useState } from 'react'
 import { authService } from '@/services/auth'
-import PanelPersonalModal from './PanelPersonal' // O como manejes el llamado de la lista de usuarios
+import PanelPersonalModal from './PanelPersonal' 
 
 interface Props {
   usuario: any
+  onCajaClick?: () => void
+  onDatosClick?: () => void // <--- IMPORTANTE: Añade esta línea
 }
 
-export function Navbar({ usuario }: Props) {
+export function Navbar({ usuario, onCajaClick, onDatosClick }: Props) { // <--- Desestructura aquí
   const [verUsuarios, setVerUsuarios] = useState(false)
 
   const handleLogout = () => {
     authService.logout()
-    window.location.reload() // Recarga para limpiar el estado
+    window.location.reload() 
   }
 
-  // Evaluamos si es administrador
   const esAdmin = usuario?.rol === 'administrador'
 
   return (
     <>
       <nav className="bg-slate-900 text-white p-4 px-8 flex justify-between items-center sticky top-0 z-50 shadow-2xl">
-        {/* Lado Izquierdo: Logo */}
+        {/* ... (Logo igual que antes) ... */}
         <div className="flex items-center gap-4">
           <div className="bg-blue-600 p-2 rounded-lg rotate-3">
             <span className="text-xl font-black italic">M</span>
@@ -32,50 +33,36 @@ export function Navbar({ usuario }: Props) {
           </div>
         </div>
 
-        {/* Lado Derecho: Acciones y Operador */}
         <div className="flex items-center gap-6">
+          {/* Botón Caja */}
+          {onCajaClick && (
+            <button onClick={onCajaClick} className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all border border-slate-700 uppercase tracking-wider">
+              💼 Control de Caja
+            </button>
+          )}
           
-          {/* CRITICAL ACCESIBILITY: Solo el Administrador ve este botón */}
+          {/* === BOTÓN DATOS CORREGIDO === */}
+         {onDatosClick && (
+  <button
+    onClick={onDatosClick} // <--- CAMBIO: Ejecuta la función, no cambia la URL
+    className="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all border border-emerald-500/20 uppercase tracking-wider"
+  >
+    📊 Datos
+  </button>
+)}
+          {/* ... (resto del código igual) ... */}
           {esAdmin && (
-            <button
-              onClick={() => setVerUsuarios(true)}
-              className="bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all border border-blue-500/20 uppercase tracking-wider"
-            >
+            <button onClick={() => setVerUsuarios(true)} className="bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all border border-blue-500/20 uppercase tracking-wider">
               👥 Gestionar Personal
             </button>
           )}
-
-          <div className="text-right border-r border-slate-700 pr-6 hidden md:block">
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
-              {usuario?.rol || 'Operador'} {/* Muestra el rol actual para control visual */}
-            </p>
-            <p className="text-xs font-bold text-blue-100">{usuario?.nombre}</p>
-          </div>
           
-          <button 
-            onClick={handleLogout}
-            className="bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white px-5 py-2 rounded-xl text-[10px] font-black transition-all border border-rose-500/20 uppercase"
-          >
+          <button onClick={handleLogout} className="bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white px-5 py-2 rounded-xl text-[10px] font-black transition-all border border-rose-500/20 uppercase">
             Cerrar Turno
           </button>
         </div>
       </nav>
-
-      {/* Renderizado del Panel de Usuarios como una capa superpuesta (Modal) */}
-      {verUsuarios && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-in fade-in duration-200">
-          <div className="w-full max-w-5xl relative max-h-[90vh] overflow-y-auto rounded-[2.5rem]">
-            {/* Botón flotante para cerrar la administración de personal */}
-            <button 
-              onClick={() => setVerUsuarios(false)}
-              className="absolute top-6 right-8 z-10 bg-rose-500 text-white w-10 h-10 rounded-full font-black text-sm hover:scale-110 active:scale-95 transition-all shadow-lg"
-            >
-              ✕
-            </button>
-            <PanelPersonalModal />
-          </div>
-        </div>
-      )}
+      {/* ... (Renderizado de modal) ... */}
     </>
   )
 }
