@@ -46,14 +46,14 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
       label: 'Alquiler/Admin',
       shadow: 'shadow-orange-100/50'
     },
-    'o': { // <--- CAMBIADO A MINÚSCULA 'o' para que coincida con toLowerCase()
+    'o': { 
       border: 'border-rose-500', 
       bg: 'bg-white', 
       text: 'text-rose-600', 
       label: 'Ocupada',
       shadow: 'shadow-rose-100/50'
     },
-    'l': { 
+    'L': { 
       border: 'border-emerald-500', 
       bg: 'bg-white', 
       text: 'text-emerald-600', 
@@ -62,11 +62,21 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
     }
   };
 
+  // 2. Nueva Configuración de Limpieza
+  const CONFIG_LIMPIEZA: Record<string, { bg: string, text: string, label: string }> = {
+    'lo': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'L.O.' },
+    'sucio': { bg: 'bg-rose-100', text: 'text-rose-700', label: 'Sucio' },
+    's-12': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'S-12' },
+    'limpio': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Limpio' }
+  };
+
   // 2. Normalización a minúsculas
-  const estadoRecibido = hab.estado_actual?.toLowerCase() || 'l';
+  const estadoRecibido = hab.estado_actual?.toLowerCase() || 'L';
+  const limpiezaRecibida = hab.estado_limpieza?.toLowerCase() || 'limpio';
   
   // 3. Selección de estilo con respaldo (fallback)
-  const estilo = CONFIG_ESTADOS[estadoRecibido] || CONFIG_ESTADOS['l'];
+  const estilo = CONFIG_ESTADOS[estadoRecibido] || CONFIG_ESTADOS['L'];
+  const estiloLimpieza = CONFIG_LIMPIEZA[limpiezaRecibida] || CONFIG_LIMPIEZA['limpio'];
 
   const getIcon = (tipo: string) => {
     const t = tipo?.toLowerCase() || '';
@@ -93,7 +103,23 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
           • {estilo.label}
         </span>
       </div>
-      
+
+      {/* Fila de estados */}
+      <div className="mb-6 flex flex-col gap-2">
+        <span className={`self-start px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${estiloLimpieza.bg} ${estiloLimpieza.text}`}>
+          {estiloLimpieza.label}
+        </span>
+        
+        {/* Visualización de Observaciones */}
+        {hab.observaciones && (
+          <div className="bg-amber-50 border-l-4 border-amber-400 p-2 rounded-r-lg">
+            <p className="text-[15px] font-bold text-amber-700 uppercase italic">
+              ⚠️ {hab.observaciones}
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="mt-8 flex items-center justify-between">
         <span className="text-4xl filter drop-shadow-lg group-hover:scale-125 transition-transform duration-300">
           {getIcon(hab.tipo)}

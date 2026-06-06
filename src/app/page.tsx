@@ -1,73 +1,94 @@
-'use client'
-import { useState } from 'react'
-import { useDashboard } from '@/hook/useDashboard'
-import { useListaHuespedes } from '@/hook/useListaHuespedes'
-import { useClientesGlobal } from '@/hook/useClientesGlobal' 
-import { Navbar } from '@/components/Navbar'
-import { Login } from '@/components/Login'
-import { HabitacionCard } from '@/components/HabitacionCard'
-import { DashboardHeader } from '@/components/DashboardHeader'
-import { PanelHuespedesActivos } from '@/components/PanelHuespedesActivos'
-import { CheckInModal } from '@/components/CheckInModal'
-import { CheckOutModal } from '@/components/CheckOutModal'
-import { DirectorioHabitaciones } from '@/components/DirectorioHabitaciones'
-import { ListaClientesRegistrados } from '@/components/ListaClientesRegistrados'
-import { ReportesFinancieros } from '@/components/ReportesFinancieros'
-import { PanelCaja } from '@/components/PanelCaja' // <-- Importamos el nuevo módulo de caja
+"use client";
+import { useState } from "react";
+import { useDashboard } from "@/hook/useDashboard";
+import { useListaHuespedes } from "@/hook/useListaHuespedes";
+import { useClientesGlobal } from "@/hook/useClientesGlobal";
+import { Navbar } from "@/components/Navbar";
+import { Login } from "@/components/Login";
+import { HabitacionCard } from "@/components/HabitacionCard";
+import { DashboardHeader } from "@/components/DashboardHeader";
+import { PanelHuespedesActivos } from "@/components/PanelHuespedesActivos";
+import { CheckInModal } from "@/components/CheckInModal";
+import { CheckOutModal } from "@/components/CheckOutModal";
+import { DirectorioHabitaciones } from "@/components/DirectorioHabitaciones";
+import { ListaClientesRegistrados } from "@/components/ListaClientesRegistrados";
+import { ReportesFinancieros } from "@/components/ReportesFinancieros";
+import { PanelCaja } from "@/components/PanelCaja"; // <-- Importamos el nuevo módulo de caja
 
 export default function Home() {
   // Agregamos 'caja' a los tipos de vista permitidos en el estado
-// En Home.tsx, cambia el tipo del estado a:
-const [vista, setVista] = useState<'mapa' | 'config' | 'clientes' | 'caja' | 'datos'>('mapa');
-  
+  // En Home.tsx, cambia el tipo del estado a:
+  const [vista, setVista] = useState<
+    "mapa" | "config" | "clientes" | "caja" | "datos"
+  >("mapa");
+
   const {
-    habitacionesFiltradas, usuarioActivo, loading, setUsuarioActivo,
-    mostrarModalIn, setMostrarModalIn, mostrarModalOut, setMostrarModalOut,
-    habSeleccionada, soloOcupadas, setSoloOcupadas, verHuespedes, setVerHuespedes,
-    manejarSeleccion, cargarHabitaciones, habitaciones 
-  } = useDashboard()
+    habitacionesFiltradas,
+    usuarioActivo,
+    loading,
+    setUsuarioActivo,
+    mostrarModalIn,
+    setMostrarModalIn,
+    mostrarModalOut,
+    setMostrarModalOut,
+    habSeleccionada,
+    soloOcupadas,
+    setSoloOcupadas,
+    verHuespedes,
+    setVerHuespedes,
+    manejarSeleccion,
+    cargarHabitaciones,
+    habitaciones,
+  } = useDashboard();
 
   // Hook para huéspedes con estancia activa (usado para el contador)
-  const { huespedes } = useListaHuespedes()
-  
-  // Hook para TODOS los clientes de la base de datos (usado para la tabla histórica)
-  const { todosLosClientes, refrescar: refrescarClientes } = useClientesGlobal()
+  const { huespedes } = useListaHuespedes();
 
-  if (loading) return <div className="bg-slate-900 min-h-screen" />
-  if (!usuarioActivo) return <Login onLoginSuccess={setUsuarioActivo} />
+  // Hook para TODOS los clientes de la base de datos (usado para la tabla histórica)
+  const { todosLosClientes, refrescar: refrescarClientes } =
+    useClientesGlobal();
+
+  if (loading) return <div className="bg-slate-900 min-h-screen" />;
+  if (!usuarioActivo) return <Login onLoginSuccess={setUsuarioActivo} />;
 
   return (
     <main className="bg-slate-50 min-h-screen">
       {/* Le pasamos onCajaClick a la cabecera. Al presionarse, 
         cambiará el estado interno a la vista del control de turnos 
       */}
-      <Navbar usuario={usuarioActivo} onCajaClick={() => setVista('caja')}
-      onDatosClick={() => setVista('datos')} />
-      
+      <Navbar
+        usuario={usuarioActivo}
+        onCajaClick={() => setVista("caja")}
+        onDatosClick={() => setVista("datos")}
+      />
+
       <div className="p-8">
-        
         {/* 1. VISTA PRINCIPAL: MAPA */}
-        {vista === 'mapa' && (
+        {vista === "mapa" && (
           <>
-            <DashboardHeader 
+            <DashboardHeader
               verHuespedes={verHuespedes}
               setVerHuespedes={setVerHuespedes}
               soloOcupadas={soloOcupadas}
               setSoloOcupadas={setSoloOcupadas}
               usuarioNombre={usuarioActivo.nombre}
-              cantidadHuespedes={huespedes.length} 
-              onConfigClick={() => setVista('config')}
+              cantidadHuespedes={huespedes.length}
+              onConfigClick={() => setVista("config")}
               onClientesClick={() => {
-                refrescarClientes(); 
-                setVista('clientes');
+                refrescarClientes();
+                setVista("clientes");
               }}
             />
 
             <div className="flex gap-6">
               {!verHuespedes ? (
                 <div className="grid grid-cols-6 gap-4 flex-1">
-                  {habitacionesFiltradas.map(hab => (
-                    <HabitacionCard key={hab.id} hab={hab} onSelect={manejarSeleccion} />
+                  {habitacionesFiltradas.map((hab) => (
+                    <HabitacionCard
+                      key={hab.id}
+                      hab={hab}
+                      onSelect={manejarSeleccion}
+                    />
                   ))}
                 </div>
               ) : (
@@ -80,35 +101,37 @@ const [vista, setVista] = useState<'mapa' | 'config' | 'clientes' | 'caja' | 'da
             </div>
 
             {/* Mensaje de vacío solo en modo mapa */}
-            {!verHuespedes && soloOcupadas && habitacionesFiltradas.length === 0 && (
-              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 font-bold">
-                No hay habitaciones ocupadas en este momento.
-              </div>
-            )}
+            {!verHuespedes &&
+              soloOcupadas &&
+              habitacionesFiltradas.length === 0 && (
+                <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 font-bold">
+                  No hay habitaciones ocupadas en este momento.
+                </div>
+              )}
           </>
         )}
 
         {/* 2. VISTA: CONFIGURACIÓN DE HABITACIONES */}
-        {vista === 'config' && (
+        {vista === "config" && (
           <div className="space-y-4">
-            <button 
-              onClick={() => setVista('mapa')}
+            <button
+              onClick={() => setVista("mapa")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
             >
               ← Volver al Mapa de Habitaciones
             </button>
-            <DirectorioHabitaciones 
-              habitaciones={habitaciones} 
-              onUpdate={() => cargarHabitaciones()} 
+            <DirectorioHabitaciones
+              habitaciones={habitaciones}
+              onUpdate={() => cargarHabitaciones()}
             />
           </div>
         )}
 
         {/* 3. VISTA: REGISTRO DE CLIENTES */}
-        {vista === 'clientes' && (
+        {vista === "clientes" && (
           <div className="space-y-4">
-            <button 
-              onClick={() => setVista('mapa')}
+            <button
+              onClick={() => setVista("mapa")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
             >
               ← Volver al Mapa de Habitaciones
@@ -118,10 +141,10 @@ const [vista, setVista] = useState<'mapa' | 'config' | 'clientes' | 'caja' | 'da
         )}
 
         {/* 4. VISTA: CONTROL DE CAJA Y TURNOS */}
-        {vista === 'caja' && (
+        {vista === "caja" && (
           <div className="space-y-4">
-            <button 
-              onClick={() => setVista('mapa')}
+            <button
+              onClick={() => setVista("mapa")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
             >
               ← Volver al Mapa de Habitaciones
@@ -130,38 +153,43 @@ const [vista, setVista] = useState<'mapa' | 'config' | 'clientes' | 'caja' | 'da
             <PanelCaja usuario={usuarioActivo} />
           </div>
         )}
-    {vista === 'datos' && (
-  <div className="space-y-4">
-    <button onClick={() => setVista('mapa')} className="text-slate-500 font-black uppercase text-[10px] hover:text-slate-800">
-      ← Volver al Mapa de Habitaciones
-    </button>
-    <ReportesFinancieros />
-  </div>
-)}
-
+        {vista === "datos" && (
+          <div className="space-y-4">
+            <button
+              onClick={() => setVista("mapa")}
+              className="text-slate-500 font-black uppercase text-[10px] hover:text-slate-800"
+            >
+              ← Volver al Mapa de Habitaciones
+            </button>
+            <ReportesFinancieros />
+          </div>
+        )}
       </div>
 
       {/* Modales */}
       {mostrarModalIn && (
-        <CheckInModal 
-          hab={habSeleccionada} 
+        <CheckInModal
+          hab={habSeleccionada}
           usuario={usuarioActivo}
-          clientesHistoricos={todosLosClientes} 
+          clientesHistoricos={todosLosClientes}
           onClose={() => setMostrarModalIn(false)}
-          onSuccess={() => { 
-            setMostrarModalIn(false); 
-            cargarHabitaciones(); 
-            refrescarClientes(); 
+          onSuccess={() => {
+            setMostrarModalIn(false);
+            cargarHabitaciones();
+            refrescarClientes();
           }}
         />
       )}
       {mostrarModalOut && (
-        <CheckOutModal 
+        <CheckOutModal
           hab={habSeleccionada}
           onClose={() => setMostrarModalOut(false)}
-          onSuccess={() => { setMostrarModalOut(false); cargarHabitaciones(); }}
+          onSuccess={() => {
+            setMostrarModalOut(false);
+            cargarHabitaciones();
+          }}
         />
       )}
     </main>
-  )
+  );
 }

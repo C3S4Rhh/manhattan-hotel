@@ -11,7 +11,7 @@ const CONFIG_ESTADOS: Record<string, { border: string, bg: string, text: string,
     'alquiler': { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', label: 'Alquiler', shadow: 'shadow-orange-100/50', hex: '#f97316' },
     'admin': { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', label: 'Admin', shadow: 'shadow-orange-100/50', hex: '#f97316' },
     'o': { border: 'border-rose-500', bg: 'bg-white', text: 'text-rose-600', label: 'Ocupada', shadow: 'shadow-rose-100/50', hex: '#e11d48' },
-    'l': { border: 'border-emerald-500', bg: 'bg-white', text: 'text-emerald-600', label: 'Libre', shadow: 'shadow-emerald-100/50', hex: '#10b981' }
+    'L': { border: 'border-emerald-500', bg: 'bg-white', text: 'text-emerald-600', label: 'Libre', shadow: 'shadow-emerald-100/50', hex: '#10b981' }
 };
 
 export function DirectorioHabitaciones({ habitaciones, onUpdate }: { habitaciones: any[], onUpdate: () => void }) {
@@ -43,8 +43,8 @@ export function DirectorioHabitaciones({ habitaciones, onUpdate }: { habitacione
             <tbody className="divide-y divide-slate-50">
               {habitaciones.map((hab) => {
                 // Buscamos la configuración según el estado actual
-                const estadoKey = hab.estado_actual?.toLowerCase() || 'l';
-                const config = CONFIG_ESTADOS[estadoKey] || CONFIG_ESTADOS['l'];
+                const estadoKey = hab.estado_actual?.toLowerCase() || 'L';
+                const config = CONFIG_ESTADOS[estadoKey] || CONFIG_ESTADOS['L'];
 
                 return (
                   <tr key={hab.id} className="group hover:bg-slate-50 transition-colors">
@@ -58,7 +58,7 @@ export function DirectorioHabitaciones({ habitaciones, onUpdate }: { habitacione
                       <div className="flex items-center gap-4">
                         {/* Círculo de color dinámico */}
                         <div 
-                          className={`w-4 h-4 rounded-full border-2 border-white shadow-md ${estadoKey !== 'l' ? 'animate-pulse' : ''}`} 
+                          className={`w-4 h-4 rounded-full border-2 border-white shadow-md ${estadoKey !== 'L' ? 'animate-pulse' : ''}`} 
                           style={{ backgroundColor: config.hex }}
                         />
                         <div>
