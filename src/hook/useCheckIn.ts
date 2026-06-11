@@ -23,8 +23,14 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
   ]);
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [precioFinal, setPrecioFinal] = useState(hab?.precio_base || 0);
-  const [adelanto, setAdelanto] = useState(0); 
+ 
   const [cargando, setCargando] = useState(false);
+
+  const [pagoEfectivo, setPagoEfectivo] = useState(0);
+  const [pagoQR, setPagoQR] = useState(0);
+  const [estadoLimpieza, setEstadoLimpieza] = useState('limpio');
+
+   const adelanto = Number(pagoEfectivo) + Number(pagoQR);
 
   useEffect(() => {
     const ahora = new Date();
@@ -112,6 +118,8 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
           pax: numPersonas,
           precio_acordado: Number(precioFinal),
           adelanto: Number(adelanto),
+          pago_efectivo: Number(pagoEfectivo),
+        pago_qr: Number(pagoQR),
           saldo_pendiente: saldo,
           fecha_ingreso: fechaIngreso,
           estado: 'activo'
@@ -137,6 +145,8 @@ if (Number(adelanto) > 0) {
       tipo_movimiento: 'ingreso',
       categoria: 'hospedaje_extra', // Asegúrate de usar la categoría correcta que esperas ver
       monto_total: Number(precioFinal), // Toma el precio total editado
+      monto_efectivo: Number(pagoEfectivo), // Nuevo campo
+      monto_qr: Number(pagoQR),             // Nuevo campo
       monto_a_cuenta: Number(adelanto), // Toma el adelanto registrado
       monto_saldo: saldo,             // El saldo restante calculado
       huesped_referencia: huespedes[0].nombre,
@@ -177,10 +187,13 @@ if (Number(adelanto) > 0) {
       }
 
       // 5. Actualizar habitación
-      await supabase.from('habitaciones')
-        .update({ estado_actual: 'O' })
-        .eq('id', hab.id);
-      
+     const { error: errorHabitacion } = await supabase
+  .from('habitaciones')
+  .update({
+    estado_actual: 'O',          // Cambia a ocupada
+    estado_limpieza: estadoLimpieza, // Aquí envías 'limpio' o 'lo'
+  })
+  .eq('id', hab.id);
       onSuccess();
     } catch (error: any) {
       console.error("Error detallado:", error);
@@ -192,7 +205,10 @@ if (Number(adelanto) > 0) {
 
   return {
     numPersonas, huespedes, fechaIngreso, precioFinal, adelanto, cargando,
-    setPrecioFinal, setAdelanto, setFechaIngreso,
+    pagoEfectivo, setPagoEfectivo, // Exportar nuevos estados
+    pagoQR, setPagoQR,
+    estadoLimpieza, setEstadoLimpieza,
+    setPrecioFinal, setFechaIngreso,
     manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso
   };
 }

@@ -5,11 +5,14 @@ import { GuestForm } from './GuestForm'
 export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
   const {
     numPersonas, huespedes, fechaIngreso, precioFinal, adelanto, cargando,
-    setPrecioFinal, setAdelanto, setFechaIngreso,
-    manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso // <-- Agregada la función de autocompletado
+    // Nuevos estados integrados
+    pagoEfectivo, setPagoEfectivo,
+    pagoQR, setPagoQR,
+    estadoLimpieza, setEstadoLimpieza,
+    setPrecioFinal, setFechaIngreso,
+    manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso
   } = useCheckIn(hab, usuario, onSuccess);
 
-  // Determinar el nombre a mostrar en el badge inferior
   const displayResponsable = usuario?.nombre || usuario?.user_metadata?.nombre || 'Cesar';
 
   return (
@@ -51,16 +54,37 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
             </div>
           </div>
 
+          {/* Pago Mixto */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Adelanto (Bs.)</label>
-              <input 
-                type="number"
-                value={adelanto}
-                onChange={(e) => setAdelanto(Number(e.target.value))}
-                className="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-blue-500 bg-emerald-50/50 font-bold text-emerald-600"
-              />
+              <label className="text-[10px] font-black text-emerald-600 uppercase ml-1">Pago Efectivo (Bs.)</label>
+              <input type="number" value={pagoEfectivo} onChange={(e) => setPagoEfectivo(Number(e.target.value))} className="w-full border-2 border-emerald-100 p-3 rounded-xl bg-emerald-50 font-bold text-emerald-600" />
             </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-sky-600 uppercase ml-1">Pago QR (Bs.)</label>
+              <input type="number" value={pagoQR} onChange={(e) => setPagoQR(Number(e.target.value))} className="w-full border-2 border-sky-100 p-3 rounded-xl bg-sky-50 font-bold text-sky-600" />
+            </div>
+          </div>
+
+          {/* Estado de Limpieza */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Estado de Limpieza al Ingresar</label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setEstadoLimpieza('limpio')} className={`flex-1 py-3 rounded-xl text-[10px] font-black transition-all ${estadoLimpieza === 'limpio' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>LIMPIO</button>
+              <button type="button" onClick={() => setEstadoLimpieza('lo')} className={`flex-1 py-3 rounded-xl text-[10px] font-black transition-all ${estadoLimpieza === 'lo' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400'}`}>L.O.</button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Adelanto (Bs.) - Calculado</label>
+  <input 
+    type="number"
+    value={adelanto} // Ya no necesita onChange porque es automático
+    disabled // Evita que lo editen manualmente
+    className="w-full border-2 border-slate-100 p-3 rounded-xl bg-slate-100 font-bold text-emerald-600"
+  />
+</div>
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Ingreso</label>
               <input 
@@ -72,38 +96,21 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
             </div>
           </div>
 
-          {/* Listado de huéspedes */}
           <div className="space-y-4 border-t border-slate-100 pt-4">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Fichas de Clientes</p>
             {huespedes.map((h, i) => (
-              <GuestForm 
-                key={i} 
-                index={i} 
-                huesped={h} 
-                onChange={actualizarHuesped} 
-                onAutoCompletar={autoCompletarHuesped} // <-- Conexión final del autocompletado
-              />
+              <GuestForm key={i} index={i} huesped={h} onChange={actualizarHuesped} onAutoCompletar={autoCompletarHuesped} />
             ))}
           </div>
 
-          {/* Badge del Responsable */}
           <div className="bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200 flex items-center justify-between">
             <span className="text-[10px] font-black text-slate-400 uppercase">Responsable del Registro:</span>
-            <span className="text-xs font-bold text-slate-700 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">
-              👤 {displayResponsable}
-            </span>
+            <span className="text-xs font-bold text-slate-700 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">👤 {displayResponsable}</span>
           </div>
 
-          {/* Botones */}
           <div className="pt-2 flex gap-3 shrink-0">
-            <button type="button" onClick={onClose} className="flex-1 bg-slate-100 text-slate-500 font-bold py-4 rounded-xl hover:bg-slate-200 transition-all uppercase text-xs">
-              Cancelar
-            </button>
-            <button 
-              type="submit" 
-              disabled={cargando}
-              className="flex-[2] bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 uppercase text-xs tracking-widest"
-            >
+            <button type="button" onClick={onClose} className="flex-1 bg-slate-100 text-slate-500 font-bold py-4 rounded-xl hover:bg-slate-200 transition-all uppercase text-xs">Cancelar</button>
+            <button type="submit" disabled={cargando} className="flex-[2] bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 uppercase text-xs tracking-widest">
               {cargando ? 'Guardando...' : 'Finalizar Registro'}
             </button>
           </div>
