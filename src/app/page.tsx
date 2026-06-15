@@ -14,12 +14,13 @@ import { DirectorioHabitaciones } from "@/components/DirectorioHabitaciones";
 import { ListaClientesRegistrados } from "@/components/ListaClientesRegistrados";
 import { ReportesFinancieros } from "@/components/ReportesFinancieros";
 import { PanelCaja } from "@/components/PanelCaja"; // <-- Importamos el nuevo módulo de caja
+import { HistorialCajas } from "@/components/HistorialCajas";
 
 export default function Home() {
   // Agregamos 'caja' a los tipos de vista permitidos en el estado
   // En Home.tsx, cambia el tipo del estado a:
   const [vista, setVista] = useState<
-    "mapa" | "config" | "clientes" | "caja" | "datos"
+    "mapa" | "config" | "clientes" | "caja" | "datos" | "historial"
   >("mapa");
 
   const {
@@ -60,6 +61,7 @@ export default function Home() {
         usuario={usuarioActivo}
         onCajaClick={() => setVista("caja")}
         onDatosClick={() => setVista("datos")}
+        onHistorialClick={() => setVista("historial")}
       />
 
       <div className="p-8">
@@ -139,6 +141,17 @@ export default function Home() {
             <ListaClientesRegistrados clientes={todosLosClientes} />
           </div>
         )}
+        {vista === "historial" && (
+  <div className="space-y-4">
+    <button 
+      onClick={() => setVista("mapa")} 
+      className="text-slate-500 font-black uppercase text-[10px] hover:text-slate-800"
+    >
+      ← Volver al Mapa
+    </button>
+    <HistorialCajas /> {/* Asegúrate de que este componente esté importado */}
+  </div>
+)}
 
         {/* 4. VISTA: CONTROL DE CAJA Y TURNOS */}
         {vista === "caja" && (

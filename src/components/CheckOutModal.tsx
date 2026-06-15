@@ -1,9 +1,11 @@
 'use client'
 import { useCheckOut } from '@/hook/useCheckOut'
 import { HuespedItem } from './HuespedItem'
+import { useState } from 'react'; // <--- Asegúrate de importar useState
+import { CambioHabitacionModal } from './CambioHabitacionModal'; // <--- Importa el componente
 
 export function CheckOutModal({ hab, onClose, onSuccess }: { hab: any, onClose: () => void, onSuccess: () => void }) {
-
+const [abiertoCambio, setAbiertoCambio] = useState(false); // <--- Agrega esto
   const {
     registro, huespedesDetalle, cargando, pagoFinal, procesando, saldoLiquidado, saldoFinal,
     diasExtra, setDiasExtra, descuentoPorcentaje, setDescuentoPorcentaje,
@@ -19,6 +21,13 @@ export function CheckOutModal({ hab, onClose, onSuccess }: { hab: any, onClose: 
         <div className="bg-rose-600 p-6 text-white text-center shrink-0">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Gestión de Salida</p>
           <h2 className="text-3xl font-black italic">HAB. #{hab.numero}</h2>
+          {/* Botón para abrir el modal */}
+  <button 
+    onClick={() => setAbiertoCambio(true)} 
+    className="text-[12px] font-bold text-white/80 underline mt-2 hover:text-white"
+  >
+    Cambiar de habitación
+  </button>
         </div>
 
         <div className="p-8 space-y-6 overflow-y-auto">
@@ -97,6 +106,14 @@ export function CheckOutModal({ hab, onClose, onSuccess }: { hab: any, onClose: 
           </div>
         </div>
       </div>
+      {abiertoCambio && (
+  <CambioHabitacionModal 
+    hab={hab} 
+    registro={registro} 
+    onClose={() => setAbiertoCambio(false)} 
+    onSuccess={onSuccess} 
+  />
+)}
     </div>
   )
 }

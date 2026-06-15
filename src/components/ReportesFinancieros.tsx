@@ -96,6 +96,7 @@ export function ReportesFinancieros() {
               <tr className="text-slate-400 uppercase text-[10px] tracking-widest border-b border-slate-200">
                 <th className="pb-4 text-left">Fecha</th>
                 <th className="pb-4 text-left">Concepto</th>
+                <th className="pb-4 text-left">cliente</th>
                 <th className="pb-4 text-left">Responsable</th>
                 <th className="pb-4 text-right">Monto</th>
               </tr>
@@ -103,16 +104,26 @@ export function ReportesFinancieros() {
             <tbody className="divide-y divide-slate-50">
               {data.map((m) => (
                 <tr key={m.id}>
-                  <td className="py-3">{new Date(m.fecha).toLocaleDateString()}</td>
+                   <td className="p-4 text-xs font-medium text-slate-500 whitespace-nowrap">
+                        <span className="block font-bold text-slate-700">
+                          {new Date(m.fecha).toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(m.fecha).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </td>
                   <td className="py-3 text-slate-700">{m.observaciones}</td>
+                  <td className="p-4 text-sm font-bold text-slate-700 capitalize">
+                        {m.huesped_referencia || 'Gasto Operativo'}
+                      </td>
                   <td className="py-3 font-bold text-slate-600 uppercase text-[10px]">{m.usuarios?.nombre || 'Desconocido'}</td>
-                  <td className="py-3 text-right font-black text-emerald-600">{Number(m.monto_total || 0).toFixed(2)} Bs.</td>
+                  <td className="py-3 text-right font-black text-emerald-600">{Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.</td>
                 </tr>
               ))}
             </tbody>
             <tfoot className="border-t-2 border-slate-800">
               <tr>
-                <td colSpan={3} className="py-4 text-right font-black uppercase tracking-widest text-xs">Total General:</td>
+                <td colSpan={4} className="py-4 text-right font-black uppercase tracking-widest text-xs">Total General:</td>
                 <td className="py-4 text-right font-black text-emerald-600 text-lg">{totalGeneral.toFixed(2)} Bs.</td>
               </tr>
             </tfoot>
