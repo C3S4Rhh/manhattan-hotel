@@ -158,7 +158,7 @@ export default function Home() {
               onClick={() => setVista("mapa")}
               className="text-slate-500 font-black uppercase text-[10px] hover:text-slate-800"
             >
-              ← Volver al Mapa
+              ← Volver al Mapa de habitaciones
             </button>
             <HistorialCajas />{" "}
             {/* Asegúrate de que este componente esté importado */}
@@ -186,7 +186,7 @@ export default function Home() {
         onClick={() => setVista("mapa")}
         className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-all hover:-translate-x-1"
       >
-        <span>←</span> Volver al Mapa
+        ← Volver al Mapa de habitaciones
       </button>
       
       <CajaChica usuarioActual={usuarioActivo} />
