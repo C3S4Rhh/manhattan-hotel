@@ -15,12 +15,19 @@ import { ListaClientesRegistrados } from "@/components/ListaClientesRegistrados"
 import { ReportesFinancieros } from "@/components/ReportesFinancieros";
 import { PanelCaja } from "@/components/PanelCaja"; // <-- Importamos el nuevo módulo de caja
 import { HistorialCajas } from "@/components/HistorialCajas";
+import { CajaChica } from "@/components/CajaChica";
 
 export default function Home() {
   // Agregamos 'caja' a los tipos de vista permitidos en el estado
   // En Home.tsx, cambia el tipo del estado a:
   const [vista, setVista] = useState<
-    "mapa" | "config" | "clientes" | "caja" | "datos" | "historial"
+    | "mapa"
+    | "config"
+    | "clientes"
+    | "caja"
+    | "datos"
+    | "historial"
+    | "cajachica"
   >("mapa");
 
   const {
@@ -62,6 +69,9 @@ export default function Home() {
         onCajaClick={() => setVista("caja")}
         onDatosClick={() => setVista("datos")}
         onHistorialClick={() => setVista("historial")}
+        onCajaChicaClick={() => setVista("cajachica")}
+        
+        
       />
 
       <div className="p-8">
@@ -141,17 +151,19 @@ export default function Home() {
             <ListaClientesRegistrados clientes={todosLosClientes} />
           </div>
         )}
+       
         {vista === "historial" && (
-  <div className="space-y-4">
-    <button 
-      onClick={() => setVista("mapa")} 
-      className="text-slate-500 font-black uppercase text-[10px] hover:text-slate-800"
-    >
-      ← Volver al Mapa
-    </button>
-    <HistorialCajas /> {/* Asegúrate de que este componente esté importado */}
-  </div>
-)}
+          <div className="space-y-4">
+            <button
+              onClick={() => setVista("mapa")}
+              className="text-slate-500 font-black uppercase text-[10px] hover:text-slate-800"
+            >
+              ← Volver al Mapa
+            </button>
+            <HistorialCajas />{" "}
+            {/* Asegúrate de que este componente esté importado */}
+          </div>
+        )}
 
         {/* 4. VISTA: CONTROL DE CAJA Y TURNOS */}
         {vista === "caja" && (
@@ -166,6 +178,21 @@ export default function Home() {
             <PanelCaja usuario={usuarioActivo} />
           </div>
         )}
+        {/* 5. VISTA: CAJA CHICA */}
+{vista === "cajachica" && (
+  <div className="min-h-screen w-full bg-slate-50 p-6 md:p-12 animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto space-y-6">
+      <button
+        onClick={() => setVista("mapa")}
+        className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-all hover:-translate-x-1"
+      >
+        <span>←</span> Volver al Mapa
+      </button>
+      
+      <CajaChica usuarioActual={usuarioActivo} />
+    </div>
+  </div>
+)}
         {vista === "datos" && (
           <div className="space-y-4">
             <button

@@ -12,7 +12,7 @@ interface Props {
   onCajaClick?: () => void;
   onDatosClick?: () => void;
   onHistorialClick?: () => void; // <--- NUEVA PROP
-
+  onCajaChicaClick?: () => void;
 }
 
 // Componente pequeño para el modal de cambio
@@ -63,13 +63,19 @@ function CambiarPasswordModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function Navbar({ usuario, onCajaClick, onDatosClick, onHistorialClick }: Props) {
+export function Navbar({
+  usuario,
+  onCajaClick,
+  onDatosClick,
+  onHistorialClick,
+  onCajaChicaClick,
+}: Props) {
   const [verUsuarios, setVerUsuarios] = useState(false);
   const [verCambiarPass, setVerCambiarPass] = useState(false);
   // Estado para el modal de historial
   const [verHistorial, setVerHistorial] = useState(false);
   const [verCaja, setVerCaja] = useState(false);
-  
+
   const handleLogout = () => {
     authService.logout();
     window.location.reload();
@@ -105,16 +111,24 @@ export function Navbar({ usuario, onCajaClick, onDatosClick, onHistorialClick }:
           {esAdmin && (
             <button
               onClick={onCajaClick}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all border border-slate-700 uppercase tracking-wider"
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-slate-700 uppercase tracking-wider"
             >
-              💼 Control de Caja
+              💼 Admin Caja
             </button>
+            
           )}
-
+{esAutorizado && (
+  <button
+    onClick={onCajaChicaClick} // <--- LLAMA A LA NUEVA FUNCIÓN
+    className="bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-indigo-500/20 uppercase tracking-wider"
+  >
+    💰 Caja Chica
+  </button>
+)}
           {esAutorizado && onDatosClick && (
             <button
               onClick={onDatosClick}
-              className="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all border border-emerald-500/20 uppercase tracking-wider"
+              className="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-emerald-500/20 uppercase tracking-wider"
             >
               📊 Datos
             </button>
@@ -128,30 +142,31 @@ export function Navbar({ usuario, onCajaClick, onDatosClick, onHistorialClick }:
               💼 Caja
             </button>
           )}
-       
-{esAutorizado && (
-  <button
-    onClick={onHistorialClick} // <--- LLAMA A LA FUNCIÓN DEL PADRE
-    className="bg-purple-500/10 hover:bg-purple-600 text-purple-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-purple-500/20 uppercase tracking-wider"
-  >
-    📜 Historial Caja
-  </button>
-)}
+
+          {esAutorizado && (
+            <button
+              onClick={onHistorialClick} // <--- LLAMA A LA FUNCIÓN DEL PADRE
+              className="bg-purple-500/10 hover:bg-purple-600 text-purple-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-purple-500/20 uppercase tracking-wider"
+            >
+              📜 Historial Caja
+            </button>
+          )}
+          
           {/* Botón Cambios de Habitación (Auditoría) */}
           {esAutorizado && (
             <button
               onClick={() => setVerHistorial(true)}
               className="bg-amber-500/10 hover:bg-amber-600 text-amber-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-amber-500/20 uppercase tracking-wider"
             >
-              🔄 Auditoría
+              🔄 cambios de hab.
             </button>
           )}
           {esAdmin && (
             <button
               onClick={() => setVerUsuarios(true)}
-              className="bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all border border-blue-500/20 uppercase tracking-wider"
+              className="bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-blue-500/20 uppercase tracking-wider"
             >
-              👥 Gestionar Personal
+              👥 Personal
             </button>
           )}
 
