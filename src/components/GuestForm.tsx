@@ -87,13 +87,13 @@ export function GuestForm({
           placeholder="CI / Pasaporte"
           value={huesped.documento}
           onChange={(e) => buscarClienteExistente(e.target.value)}
-          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-normal text-blue-600"
+          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-500 text-blue-600"
         />
         <input
           placeholder="Profesión"
           value={huesped.profesion}
           onChange={(e) => onChange(index, "profesion", e.target.value)}
-          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-normal"
+          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-500"
         />
       </div>
 
@@ -103,7 +103,7 @@ export function GuestForm({
         placeholder="Nombre Completo"
         value={huesped.nombre}
         onChange={(e) => onChange(index, "nombre", e.target.value)}
-        className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-sm placeholder:font-normal"
+        className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-sm placeholder:font-text-slate-500"
       />
 
       {/* Nacionalidad y Fecha de Nacimiento */}
@@ -113,7 +113,7 @@ export function GuestForm({
           placeholder="Nacionalidad (Ej. Boliviana)"
           value={huesped.nacionalidad || ""}
           onChange={(e) => onChange(index, "nacionalidad", e.target.value)}
-          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-normal"
+          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-900"
         />
         <div className="relative flex flex-col justify-end">
           <span className="text-[8px] font-bold text-slate-400 uppercase ml-1 mb-0.5">
@@ -137,8 +137,22 @@ export function GuestForm({
         placeholder="Celular de Referencia"
         value={huesped.celular}
         onChange={(e) => onChange(index, "celular", e.target.value)}
-        className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-normal"
+        className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-500"
       />
+      <div className="space-y-1">
+  <select
+    value={huesped.estado_civil || ""}
+    onChange={(e) => onChange(index, "estado_civil", e.target.value)}
+    className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-500"
+      >
+    <option value="">Estado civil...</option>
+    <option value="soltero">Soltero(a)</option>
+    <option value="casado">Casado(a)</option>
+    <option value="viudo">Viudo(a)</option>
+    <option value="divorciado">Divorciado(a)</option>
+  </select>
+</div>
     </div>
+    
   );
 }

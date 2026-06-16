@@ -19,7 +19,7 @@ const calcularEdad = (fechaNacimiento: string): number => {
 export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
   const [numPersonas, setNumPersonas] = useState(1);
   const [huespedes, setHuespedes] = useState([
-    { nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '' }
+    { nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '',estado_civil: '' }
   ]);
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [precioFinal, setPrecioFinal] = useState(hab?.precio_base || 0);
@@ -44,7 +44,7 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     const nuevoArray = [...huespedes];
     if (n > huespedes.length) {
       while (nuevoArray.length < n) {
-        nuevoArray.push({ nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '' });
+        nuevoArray.push({ nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '',estado_civil: '' });
       }
     } else {
       nuevoArray.splice(n);
@@ -173,6 +173,7 @@ if (Number(adelanto) > 0) {
             celular: h.celular,
             nacionalidad: h.nacionalidad || 'Boliviana',
             fecha_nacimiento: h.fecha_nacimiento || null,
+            estado_civil: h.estado_civil,
             ultima_visita: new Date().toISOString()
           }, { onConflict: 'documento' })
           .select().single();

@@ -43,6 +43,7 @@ export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
                 <th className="p-4 text-left">Celular</th>
                 <th className="p-4 text-left">Profesión</th>
                 <th className="p-4 text-left">País / Origen</th>
+                <th className="p-4 text-left">Estado civil</th>
                 <th className="p-4 text-left">Edad</th>
                 <th className="p-4 text-left">registro</th>
                 <th className="p-4 text-left">Última Visita</th>
@@ -109,6 +110,14 @@ export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
                         <span className="text-slate-400 italic font-normal text-[11px]">
                           No especificado
                         </span>
+                      )}
+                    </td>
+                     {/* Profesión */}
+                    <td className="p-4 text-slate-600 font-medium capitalize">
+                      {cliente.estado_civil ? (
+                        cliente.estado_civil.toLowerCase()
+                      ) : (
+                        <span className="text-slate-300">---</span>
                       )}
                     </td>
 

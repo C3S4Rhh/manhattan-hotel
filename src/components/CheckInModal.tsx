@@ -161,7 +161,7 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
           </div>
 
           <div className="space-y-4 border-t border-slate-100 pt-4">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">
+            <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest text-center">
               Fichas de Clientes
             </p>
             {huespedes.map((h, i) => (
