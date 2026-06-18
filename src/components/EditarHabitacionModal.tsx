@@ -17,7 +17,8 @@ const CONFIG_LIMPIEZA: Record<string, string> = {
   'lo': 'L.O.',
   'sucio': 'Sucio',
   's-12': 'S-12',
-  'limpio': 'Limpio'
+  'limpio': 'Limpio',
+   'sl': 'S.L'
 };
 
 export default function EditarHabitacionModal({ habitacion, onClose, onUpdate, rol }: any) {

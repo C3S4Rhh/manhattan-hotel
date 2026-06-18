@@ -120,10 +120,10 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setEstadoLimpieza("limpio")}
-                className={`flex-1 py-3 rounded-xl text-[10px] font-black transition-all ${estadoLimpieza === "limpio" ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"}`}
+                onClick={() => setEstadoLimpieza("sl")}
+                className={`flex-1 py-3 rounded-xl text-[10px] font-black transition-all ${estadoLimpieza === "sl" ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"}`}
               >
-                LIMPIO
+                S.L.
               </button>
               <button
                 type="button"

@@ -67,7 +67,8 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
     'lo': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'L.O.' },
     'sucio': { bg: 'bg-rose-100', text: 'text-rose-700', label: 'Sucio' },
     's-12': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'S-12' },
-    'limpio': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Limpio' }
+    'limpio': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Limpio' },
+    'sl': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'S.L.' }
   };
 
   // 2. Normalización a minúsculas

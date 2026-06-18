@@ -19,7 +19,8 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
       const { data: hospedaje } = await supabase
         .from('hospedajes')
         .select(`
-          *,
+          *,medios_dias_extra,
+    descuento_porcentaje,
           detalle_hospedaje_huespedes (
             id,
             estado,
@@ -31,6 +32,8 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
         .maybeSingle();
 
       if (hospedaje) {
+        setDiasExtra(hospedaje.medios_dias_extra || 0);
+  setDescuentoPorcentaje(hospedaje.descuento_porcentaje || 0);
         setRegistro(hospedaje)
         const pendiente = (hospedaje.precio_acordado || 0) - (hospedaje.a_cuenta || 0);
         setPagoFinal(pendiente > 0 ? pendiente : 0);
@@ -46,14 +49,20 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
 
   // LÓGICA DE CÁLCULO DINÁMICO
   const calcularSaldoFinal = () => {
-    const precioBase = registro?.precio_acordado || 0;
-    const aCuenta = registro?.a_cuenta || 0;
-    // Aumento: cada medio día extra es la mitad del precio base
-    const aumento = diasExtra * (precioBase / 2);
-    const subtotal = precioBase + aumento;
-    // Aplicar descuento
-    const descuento = subtotal * (descuentoPorcentaje / 100);
-    return (subtotal - descuento) - aCuenta;
+ const precioBase = Number(registro?.precio_acordado || 0);
+  
+  // 2. Aumento por medios días (si decides seguir usando el input)
+  const aumento = diasExtra * (precioBase / 2);
+  
+  // 3. Subtotal
+  const subtotal = precioBase + aumento;
+  
+  // 4. Descuento
+  const descuento = subtotal * (descuentoPorcentaje / 100);
+  
+  // 5. Saldo final
+  const aCuenta = Number(registro?.a_cuenta || 0);
+  return (subtotal - descuento) - aCuenta;
   };
 
   const saldoFinal = calcularSaldoFinal();
@@ -72,6 +81,78 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
       alert("Error al retirar: " + error.message);
     }
   }
+const registrarCargaDiaExtra = async (montoBaseHabitacion: number) => {
+  setProcesando(true);
+  try {
+    // Calculamos el valor del cargo (mitad o entero) basado en el precio base real
+    const cargo = montoBaseHabitacion; 
+    
+    // Sumamos este cargo al precio_acordado actual para mantener la deuda actualizada
+    const nuevoPrecioAcordado = Number(registro.precio_acordado || 0) + cargo;
+    
+    await supabase.from('hospedajes')
+      .update({ precio_acordado: nuevoPrecioAcordado })
+      .eq('id', registro.id);
+      
+    onSuccess(); 
+  } catch (e: any) {
+    alert("Error: " + e.message);
+  } finally {
+    setProcesando(false);
+  }
+};
+// En tu useCheckOut.ts, añade/actualiza esta función:
+const registrarPagoParcial = async (efectivo: number, qr: number) => {
+  const montoTotal = Number(efectivo) + Number(qr);
+  if (montoTotal <= 0) return;
+  
+  setProcesando(true);
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const nuevoSaldo = Number(saldoFinal) - montoTotal;
+    // 1. Obtener sesión abierta
+    const { data: sesionAbierta } = await supabase
+      .from('caja_sesiones')
+      .select('id')
+      .eq('estado', 'abierta')
+      .maybeSingle();
+
+    // 2. Registrar en caja (Igual que en el CheckIn)
+    const { error: errorCaja } = await supabase
+      .from('caja_movimientos')
+      .insert([{
+        id_sesion: sesionAbierta?.id || null,
+        id_usuario: user?.id,
+        id_habitacion: hab.id,
+        nro_habitacion: String(hab.numero),
+        tipo_movimiento: 'ingreso',
+        categoria: 'hospedaje_extra',
+        monto_total: Number(registro.precio_acordado),
+        monto_efectivo: Number(efectivo),
+        monto_qr: Number(qr),
+        monto_saldo: nuevoSaldo,
+        monto_a_cuenta: montoTotal,
+        huesped_referencia: registro.nombre_huesped || 'Huésped',
+        observaciones: `Abono Hab. #${hab.numero} - ${registro.nombre_huesped}. Saldo restante: ${nuevoSaldo} Bs.`,
+        fecha: new Date().toISOString()
+      }]);
+
+    if (errorCaja) throw errorCaja;
+
+    // 3. Actualizar saldo en hospedajes
+    await supabase
+      .from('hospedajes')
+      .update({ a_cuenta: (registro.a_cuenta || 0) + montoTotal })
+      .eq('id', registro.id);
+
+    onSuccess(); // Esto refrescará los datos del modal
+  } catch (e: any) {
+    console.error("Error en pago:", e);
+    alert("Error al registrar el pago: " + e.message);
+  } finally {
+    setProcesando(false);
+  }
+};
 
   const realizarSalidaTotal = async () => {
     if (!saldoLiquidado) {
@@ -145,6 +226,8 @@ onSuccess();
     saldoLiquidado,
     saldoFinal, // Nuevo valor calculado
     setPagoFinal,
+    registrarCargaDiaExtra,
+    registrarPagoParcial,
     retirarHuesped,
     realizarSalidaTotal,
     // Nuevos estados para el modal
