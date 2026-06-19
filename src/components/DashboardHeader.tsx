@@ -7,8 +7,10 @@ interface HeaderProps {
   setSoloOcupadas: (v: boolean) => void;
   usuarioNombre: string;
   cantidadHuespedes: number;
+  
   onConfigClick: () => void;
   onClientesClick: () => void; // <--- Nueva prop para Clientes
+  onRegistrosClick: () => void;
 }
 
 export function DashboardHeader({
@@ -18,8 +20,10 @@ export function DashboardHeader({
   setSoloOcupadas,
   usuarioNombre,
   cantidadHuespedes,
+  
   onConfigClick,
   onClientesClick, // <--- La recibimos aquí
+  onRegistrosClick,
 }: HeaderProps) {
   return (
     <div className="flex justify-between items-center mb-8">
@@ -37,6 +41,16 @@ export function DashboardHeader({
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Botón de Registros (NUEVO) */}
+        <button
+          onClick={onRegistrosClick}
+          className="flex items-center gap-3 bg-indigo-50 p-1 px-5 rounded-2xl shadow-sm border border-indigo-100 hover:bg-indigo-100 transition-all"
+        >
+          <div className="bg-white p-1.5 rounded-lg shadow-sm">📋</div>
+          <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700">
+            Registros
+          </span>
+        </button>
         {/* Botón de Huéspedes En Casa */}
         <button
           onClick={() => {

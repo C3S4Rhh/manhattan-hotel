@@ -16,6 +16,7 @@ import { ReportesFinancieros } from "@/components/ReportesFinancieros";
 import { PanelCaja } from "@/components/PanelCaja"; // <-- Importamos el nuevo módulo de caja
 import { HistorialCajas } from "@/components/HistorialCajas";
 import { CajaChica } from "@/components/CajaChica";
+import { PanelRegistrosHoy } from "@/components/PanelRegistrosHoy"; // <-- Nuevo import
 
 export default function Home() {
   // Agregamos 'caja' a los tipos de vista permitidos en el estado
@@ -28,6 +29,7 @@ export default function Home() {
     | "datos"
     | "historial"
     | "cajachica"
+    | "registros"
   >("mapa");
 
   const {
@@ -85,11 +87,13 @@ export default function Home() {
               setSoloOcupadas={setSoloOcupadas}
               usuarioNombre={usuarioActivo.nombre}
               cantidadHuespedes={huespedes.length}
+              
               onConfigClick={() => setVista("config")}
               onClientesClick={() => {
                 refrescarClientes();
                 setVista("clientes");
               }}
+              onRegistrosClick={() => setVista("registros")}
             />
 
             <div className="flex gap-6">
@@ -138,7 +142,14 @@ export default function Home() {
             />
           </div>
         )}
-
+{vista === "registros" && (
+  <div className="space-y-6">
+    <button onClick={() => setVista("mapa")} className="text-[10px] font-black uppercase text-slate-500">
+      ← Volver al mapa
+    </button>
+    <PanelRegistrosHoy />
+  </div>
+)}
         {/* 3. VISTA: REGISTRO DE CLIENTES */}
         {vista === "clientes" && (
           <div className="space-y-4">
