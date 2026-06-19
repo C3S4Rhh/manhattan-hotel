@@ -115,16 +115,15 @@ export function Navbar({
             >
               💼 Admin Caja
             </button>
-            
           )}
-{esAutorizado && (
-  <button
-    onClick={onCajaChicaClick} // <--- LLAMA A LA NUEVA FUNCIÓN
-    className="bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-indigo-500/20 uppercase tracking-wider"
-  >
-    💰 Caja Chica
-  </button>
-)}
+          {esAutorizado && (
+            <button
+              onClick={onCajaChicaClick} // <--- LLAMA A LA NUEVA FUNCIÓN
+              className="bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-indigo-500/20 uppercase tracking-wider"
+            >
+              💰 Caja Chica
+            </button>
+          )}
           {esAutorizado && onDatosClick && (
             <button
               onClick={onDatosClick}
@@ -151,7 +150,7 @@ export function Navbar({
               📜 Historial Caja
             </button>
           )}
-          
+
           {/* Botón Cambios de Habitación (Auditoría) */}
           {esAutorizado && (
             <button

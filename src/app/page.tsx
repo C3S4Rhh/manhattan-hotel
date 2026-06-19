@@ -72,8 +72,6 @@ export default function Home() {
         onDatosClick={() => setVista("datos")}
         onHistorialClick={() => setVista("historial")}
         onCajaChicaClick={() => setVista("cajachica")}
-        
-        
       />
 
       <div className="p-8">
@@ -87,7 +85,6 @@ export default function Home() {
               setSoloOcupadas={setSoloOcupadas}
               usuarioNombre={usuarioActivo.nombre}
               cantidadHuespedes={huespedes.length}
-              
               onConfigClick={() => setVista("config")}
               onClientesClick={() => {
                 refrescarClientes();
@@ -142,14 +139,17 @@ export default function Home() {
             />
           </div>
         )}
-{vista === "registros" && (
-  <div className="space-y-6">
-    <button onClick={() => setVista("mapa")} className="text-[10px] font-black uppercase text-slate-500">
-      ← Volver al mapa
-    </button>
-    <PanelRegistrosHoy />
-  </div>
-)}
+        {vista === "registros" && (
+          <div className="space-y-6">
+            <button
+              onClick={() => setVista("mapa")}
+              className="text-[10px] font-black uppercase text-slate-500"
+            >
+              ← Volver al mapa
+            </button>
+            <PanelRegistrosHoy />
+          </div>
+        )}
         {/* 3. VISTA: REGISTRO DE CLIENTES */}
         {vista === "clientes" && (
           <div className="space-y-4">
@@ -162,7 +162,7 @@ export default function Home() {
             <ListaClientesRegistrados clientes={todosLosClientes} />
           </div>
         )}
-       
+
         {vista === "historial" && (
           <div className="space-y-4">
             <button
@@ -190,20 +190,20 @@ export default function Home() {
           </div>
         )}
         {/* 5. VISTA: CAJA CHICA */}
-{vista === "cajachica" && (
-  <div className="min-h-screen w-full bg-slate-50 p-6 md:p-12 animate-in fade-in duration-500">
-    <div className="max-w-7xl mx-auto space-y-6">
-      <button
-        onClick={() => setVista("mapa")}
-        className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-all hover:-translate-x-1"
-      >
-        ← Volver al Mapa de habitaciones
-      </button>
-      
-      <CajaChica usuarioActual={usuarioActivo} />
-    </div>
-  </div>
-)}
+        {vista === "cajachica" && (
+          <div className="min-h-screen w-full bg-slate-50 p-6 md:p-12 animate-in fade-in duration-500">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <button
+                onClick={() => setVista("mapa")}
+                className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-all hover:-translate-x-1"
+              >
+                ← Volver al Mapa de habitaciones
+              </button>
+
+              <CajaChica usuarioActual={usuarioActivo} />
+            </div>
+          </div>
+        )}
         {vista === "datos" && (
           <div className="space-y-4">
             <button
