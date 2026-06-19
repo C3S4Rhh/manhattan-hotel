@@ -1,29 +1,32 @@
-// 1. IMPORTANTE: Esta línea falta o está mal escrita
-import { supabase } from '@/lib/supabase'; 
+import { supabase } from '@/lib/supabase';
 
 export const obtenerRegistrosDelDia = async () => {
-  const fechaBolivia = new Date();
-  const offset = 4 * 60 * 60 * 1000;
-  const hoy = new Date(fechaBolivia.getTime() - offset).toISOString().split('T')[0];
+  // Obtenemos la fecha exacta en formato YYYY-MM-DD
+  const hoy = new Date().toISOString().split('T')[0];
   
-  console.log("Consultando registros para el día:", hoy);
+  console.log("Filtrando registros para hoy (2026-06-19):", hoy);
 
-  // 2. Ahora 'supabase' ya está definido gracias al import
   const { data, error } = await supabase
-    .from('hospedajes')
+    .from('detalle_hospedaje_huespedes')
     .select(`
-      *,
-      habitaciones (numero),
-      detalle_hospedaje_huespedes (
-        clientes (*)
-      )
+      id,
+      hospedajes!inner (
+        estado,
+        precio_acordado,
+        a_cuenta,
+        fecha_ingreso,
+        habitaciones (numero)
+      ),
+      clientes (*)
     `)
-    .gte('fecha_ingreso', `${hoy}T00:00:00`)
-    .lte('fecha_ingreso', `${hoy}T23:59:59`);
+    // EL TRUCO: Al usar !inner en el select, este filtro ahora sí funcionará correctamente
+    .gte('hospedajes.fecha_ingreso', `${hoy}T00:00:00`)
+    .lte('hospedajes.fecha_ingreso', `${hoy}T23:59:59`);
 
   if (error) {
     console.error("Error al obtener registros:", error);
     return [];
   }
+  
   return data || [];
 };
