@@ -2,7 +2,12 @@ import { supabase } from '@/lib/supabase';
 
 export const obtenerRegistrosDelDia = async () => {
   // Obtenemos la fecha exacta en formato YYYY-MM-DD
-  const hoy = new Date().toISOString().split('T')[0];
+ 
+  const fechaBolivia = new Date();
+  const offset = 4 * 60 * 60 * 1000;
+  const hoy = new Date(fechaBolivia.getTime() - offset).toISOString().split('T')[0];
+  
+  console.log("Consultando registros para el día:", hoy);
   
   console.log("Filtrando registros para hoy (2026-06-19):", hoy);
 

@@ -6,6 +6,7 @@ import PanelPersonal from "./PanelPersonal";
 import { HistorialCambios } from "./HistorialCambios"; // Asegúrate de que la ruta sea correcta
 import { GestionCaja } from "./GestionCaja";
 import { HistorialCajas } from "./HistorialCajas";
+import { GestionEgresos } from "./GestionEgresos";
 
 interface Props {
   usuario: any;
@@ -13,6 +14,7 @@ interface Props {
   onDatosClick?: () => void;
   onHistorialClick?: () => void; // <--- NUEVA PROP
   onCajaChicaClick?: () => void;
+  onEgresosClick?: () => void;
 }
 
 // Componente pequeño para el modal de cambio
@@ -69,6 +71,7 @@ export function Navbar({
   onDatosClick,
   onHistorialClick,
   onCajaChicaClick,
+  onEgresosClick,
 }: Props) {
   const [verUsuarios, setVerUsuarios] = useState(false);
   const [verCambiarPass, setVerCambiarPass] = useState(false);
@@ -108,6 +111,14 @@ export function Navbar({
         </div>
 
         <div className="flex items-center gap-6">
+          {esAdmin && (
+            <button
+              onClick={onEgresosClick} // <--- Llamamos a la función del padre
+              className="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-rose-500/20 uppercase tracking-wider"
+            >
+              📉 Egresos
+            </button>
+          )}
           {esAdmin && (
             <button
               onClick={onCajaClick}
@@ -163,9 +174,9 @@ export function Navbar({
           {esAdmin && (
             <button
               onClick={() => setVerUsuarios(true)}
-              className="bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-blue-500/20 uppercase tracking-wider"
+              className="bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-[15px] font-black transition-all border border-blue-500/20 uppercase tracking-wider"
             >
-              👥 Personal
+              👥
             </button>
           )}
 
