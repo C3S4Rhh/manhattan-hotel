@@ -6,13 +6,24 @@ export const registrarIngreso = async (ingreso: any) => {
   return data;
 };
 
-export const obtenerIngresosDelMes = async () => {
-  const hoy = new Date();
-  const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
+// Nueva función que acepta rango de fechas
+export const obtenerIngresosPorRango = async (inicio: string, fin: string) => {
+// inicio y fin son strings como "2026-06-19"
+  
+  // Convertimos las fechas a un rango que cubra todo el día (desde 00:00 hasta 23:59)
+  const fechaInicio = `${inicio}T00:00:00Z`;
+  const fechaFin = `${fin}T23:59:59Z`;
+
   const { data, error } = await supabase
     .from('ingresos_extra')
     .select('*')
-    .gte('fecha', primerDia)
+    .gte('fecha', fechaInicio)
+    .lte('fecha', fechaFin)
     .order('fecha', { ascending: false });
+    
+  if (error) {
+    console.error("Error Supabase:", error);
+    throw error;
+  }
   return data || [];
 };

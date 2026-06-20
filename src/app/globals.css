@@ -42,3 +42,107 @@ body {
     display: block !important;
   }
 }
+@media print {
+  body * { visibility: hidden; }
+  .printable-area, .printable-area * { visibility: visible; }
+  .printable-area { position: absolute; left: 0; top: 0; width: 100%; }
+  /* Oculta botones y formularios al imprimir */
+  .no-print { display: none; }
+}
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; }
+}
+@media print {
+  /* Oculta los encabezados y pies de página por defecto del navegador */
+  @page {
+    margin: 1cm;
+  }
+  
+  /* Oculta elementos que no queremos en el PDF */
+  .no-print { display: none !important; }
+  
+  /* Asegura que el contenido sea visible */
+  .printable-area { display: block !important; }
+}
+@media print {
+  /* Oculta los elementos de la interfaz que no queremos */
+  .no-print { 
+    display: none !important; 
+  }
+
+  /* Asegura que lo que queremos imprimir se vea */
+  .printable-area { 
+    display: block !important; 
+  }
+
+  /* Asegura que nuestro título aparezca al imprimir */
+  .print-title { 
+    display: block !important; 
+  }
+
+  /* Oculta los encabezados/pies de página nativos del navegador */
+  @page {
+    margin: 1cm;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+@media print {
+  /* Forzamos que no haya saltos de página innecesarios */
+  .printable-area {
+    display: block !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Oculta los encabezados/pies de página nativos */
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+
+  /* Asegura que el título sea visible */
+  .print-title {
+    display: block !important;
+    margin-bottom: 20px;
+  }
+}
+@media print {
+  .no-print { display: none !important; }
+  @page { margin: 10mm; }
+}
+@media print {
+  /* Oculta TODO lo que no sea el área imprimible */
+  body * {
+    visibility: hidden;
+  }
+
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+
+  /* Posiciona el área imprimible arriba a la izquierda */
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  /* Asegura que el título sea visible y no se corte */
+  .print-title {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  /* Elimina márgenes extra del navegador */
+  @page {
+    margin: 10mm;
+    size: auto;
+  }
+}

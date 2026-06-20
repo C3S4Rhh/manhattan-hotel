@@ -20,7 +20,7 @@ import { PanelRegistrosHoy } from "@/components/PanelRegistrosHoy"; // <-- Nuevo
 import { GestionEgresos } from "@/components/GestionEgresos";
 import { VistaFinanzas } from "@/components/VistaFinanzas";
 import { RegistroIngreso } from "@/components/RegistroIngreso";
-import { ListaIngresos } from "@/components/ListaIngresos";
+import { GestionIngresos } from "@/components/GestionIngresos";
 
 export default function Home() {
   // Agregamos 'caja' a los tipos de vista permitidos en el estado
@@ -224,21 +224,20 @@ export default function Home() {
             <GestionEgresos />
           </div>
         )}
-
-        {vista === "ingresos" && (
-          <div className="p-8">
-            <button
-              onClick={() => setVista("finanzas")}
-              className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
-            >
-              ← Volver a Finanzas
-            </button>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <RegistroIngreso onExito={() => setRefresh((prev) => prev + 1)} />
-              <ListaIngresos refreshTrigger={refresh} />
-            </div>
-          </div>
-        )}
+{/* 4. VISTA: GESTIÓN DE INGRESOS EXTRAS */}
+{vista === "ingresos" && (
+  <div className="p-8">
+    <button
+      onClick={() => setVista("finanzas")}
+      className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors mb-4"
+    >
+      ← Volver a Finanzas
+    </button>
+    
+    {/* Usamos el componente consolidado que ya tiene filtros y lógica de impresión */}
+    <GestionIngresos />
+  </div>
+)}
         {/* 5. VISTA: CAJA CHICA */}
         {vista === "cajachica" && (
           <div className="min-h-screen w-full bg-slate-50 p-6 md:p-12 animate-in fade-in duration-500">
