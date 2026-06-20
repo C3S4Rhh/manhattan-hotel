@@ -18,6 +18,9 @@ import { HistorialCajas } from "@/components/HistorialCajas";
 import { CajaChica } from "@/components/CajaChica";
 import { PanelRegistrosHoy } from "@/components/PanelRegistrosHoy"; // <-- Nuevo import
 import { GestionEgresos } from "@/components/GestionEgresos";
+import { VistaFinanzas } from "@/components/VistaFinanzas";
+import { RegistroIngreso } from "@/components/RegistroIngreso";
+import { ListaIngresos } from "@/components/ListaIngresos";
 
 export default function Home() {
   // Agregamos 'caja' a los tipos de vista permitidos en el estado
@@ -31,7 +34,9 @@ export default function Home() {
     | "historial"
     | "cajachica"
     | "registros"
+    | "finanzas"
     | "egresos"
+    | "ingresos"
   >("mapa");
 
   const {
@@ -52,7 +57,7 @@ export default function Home() {
     cargarHabitaciones,
     habitaciones,
   } = useDashboard();
-
+  const [refresh, setRefresh] = useState(0);
   // Hook para huéspedes con estancia activa (usado para el contador)
   const { huespedes } = useListaHuespedes();
 
@@ -70,6 +75,7 @@ export default function Home() {
       */}
       <Navbar
         usuario={usuarioActivo}
+        setVista={setVista}
         onEgresosClick={() => setVista("egresos")}
         onCajaClick={() => setVista("caja")}
         onDatosClick={() => setVista("datos")}
@@ -192,16 +198,45 @@ export default function Home() {
             <PanelCaja usuario={usuarioActivo} />
           </div>
         )}
-        {/* 6. VISTA: GESTIÓN DE EGRESOS */}
-        {vista === "egresos" && (
-          <div className="space-y-4 animate-in fade-in duration-500">
+
+        {/* vistas de finanzas con egresos e ingresos extras */}
+
+        {vista === "finanzas" && (
+          <div className="p-8">
             <button
               onClick={() => setVista("mapa")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
             >
-              ← Volver al Mapa de Habitaciones
+              ← Volver al mapa
+            </button>
+            <VistaFinanzas onSelect={(v) => setVista(v)} />
+          </div>
+        )}
+
+        {vista === "egresos" && (
+          <div className="p-8">
+            <button
+              onClick={() => setVista("finanzas")}
+              className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
+            >
+              ← Volver a Finanzas
             </button>
             <GestionEgresos />
+          </div>
+        )}
+
+        {vista === "ingresos" && (
+          <div className="p-8">
+            <button
+              onClick={() => setVista("finanzas")}
+              className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
+            >
+              ← Volver a Finanzas
+            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <RegistroIngreso onExito={() => setRefresh((prev) => prev + 1)} />
+              <ListaIngresos refreshTrigger={refresh} />
+            </div>
           </div>
         )}
         {/* 5. VISTA: CAJA CHICA */}

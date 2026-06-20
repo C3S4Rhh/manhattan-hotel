@@ -38,6 +38,7 @@ export function ClientCard({ data }: { data: any }) {
           <p><span className="text-slate-400">EDAD:</span> {calcularEdad(cliente.fecha_nacimiento)} años</p>
           <p><span className="text-slate-400">NAC:</span> {cliente.nacionalidad || "N/A"}</p>
           <p><span className="text-slate-400">CEL:</span> {cliente.celular || "N/A"}</p>
+           <p><span className="text-slate-400">Estado Civil:</span> {cliente.estado_civil || "N/A"}</p>
         </div>
       </div>
 
@@ -50,6 +51,7 @@ export function ClientCard({ data }: { data: any }) {
           <p className="text-slate-400 font-bold uppercase">Pagado</p>
           <p className="font-black text-emerald-600">{hospedaje.a_cuenta || 0} Bs.</p>
         </div>
+        
       </div>
 
       <div className={`p-2 rounded-lg text-center ${saldoPendiente > 0 ? "bg-rose-50" : "bg-slate-50"}`}>

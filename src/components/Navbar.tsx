@@ -10,6 +10,7 @@ import { GestionEgresos } from "./GestionEgresos";
 
 interface Props {
   usuario: any;
+  setVista: (vista: any) => void;
   onCajaClick?: () => void;
   onDatosClick?: () => void;
   onHistorialClick?: () => void; // <--- NUEVA PROP
@@ -67,6 +68,7 @@ function CambiarPasswordModal({ onClose }: { onClose: () => void }) {
 
 export function Navbar({
   usuario,
+  setVista,
   onCajaClick,
   onDatosClick,
   onHistorialClick,
@@ -113,10 +115,10 @@ export function Navbar({
         <div className="flex items-center gap-6">
           {esAdmin && (
             <button
-              onClick={onEgresosClick} // <--- Llamamos a la función del padre
+              onClick={() => setVista("finanzas")} // Cambiado a 'finanzas'
               className="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-rose-500/20 uppercase tracking-wider"
-            >
-              📉 Egresos
+             >
+              📊 Finanzas
             </button>
           )}
           {esAdmin && (
