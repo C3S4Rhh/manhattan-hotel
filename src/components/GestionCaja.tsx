@@ -124,19 +124,21 @@ export function GestionCaja({ usuario, onClose }: any) {
             </div>
 
             <div className="px-8 pb-8 overflow-y-auto">
-              <div className="grid grid-cols-3 gap-4 px-4 py-2 text-[10px] font-black text-slate-400 uppercase">
-                <div>Cliente</div><div>Habitación</div><div className="text-right">Monto</div>
+              <div className="grid grid-cols-5 gap-4 px-4 py-2 text-[10px] font-black text-slate-400 uppercase">
+                <div>Cliente</div><div>Habitación</div><div>qr</div><div>efectivo</div><div className="text-right">Monto</div>
               </div>
               <div className="space-y-3">
                 {movimientos.map((m) => (
-                  <div key={m.id} className="grid grid-cols-3 gap-4 items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div key={m.id} className="grid grid-cols-5 gap-4 items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <p className="font-bold text-slate-800 truncate">{m.huesped_referencia}</p>
                     <p className="font-bold text-slate-400 uppercase text-xs">Hab. {m.nro_habitacion}</p>
-                    <p className="font-black text-emerald-600 text-right">+ {Number(m.monto_a_cuenta).toFixed(2)} Bs.</p>
+                    <p className="font-bold text-slate-800 truncate">{m.monto_efectivo}</p>
+                    <p className="font-bold text-slate-400 uppercase text-xs">. {m.monto_qr}</p>
+                    <p className="font-black text-emerald-600 text-right">+{Number(m.monto_a_cuenta).toFixed(2)}Bs.</p>
                   </div>
                 ))}
               </div>
-              <button onClick={imprimirReportePDF} className="mt-6 w-full py-4 border-2 border-slate-200 rounded-2xl font-bold text-slate-500 hover:bg-slate-50">Descargar Reporte PDF</button>
+           {/*<button onClick={imprimirReportePDF} className="mt-6 w-full py-4 border-2 border-slate-200 rounded-2xl font-bold text-slate-500 hover:bg-slate-50">Descargar Reporte PDF</button> */}
             </div>
           </div>
         )}

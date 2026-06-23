@@ -93,7 +93,7 @@ export function GuestForm({
           placeholder="Profesión"
           value={huesped.profesion}
           onChange={(e) => onChange(index, "profesion", e.target.value)}
-          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-500"
+          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-500 text-green-600"
         />
       </div>
 
@@ -103,7 +103,7 @@ export function GuestForm({
         placeholder="Nombre Completo"
         value={huesped.nombre}
         onChange={(e) => onChange(index, "nombre", e.target.value)}
-        className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-sm placeholder:font-text-slate-500"
+        className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-sm placeholder:font-text-slate-500 text-green-600"
       />
 
       {/* Nacionalidad y Fecha de Nacimiento */}
@@ -113,7 +113,7 @@ export function GuestForm({
           placeholder="Nacionalidad (Ej. Boliviana)"
           value={huesped.nacionalidad || ""}
           onChange={(e) => onChange(index, "nacionalidad", e.target.value)}
-          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-900"
+          className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-900 text-green-600"
         />
         <div className="relative flex flex-col justify-end">
           <span className="text-[8px] font-bold text-slate-400 uppercase ml-1 mb-0.5">
@@ -126,7 +126,7 @@ export function GuestForm({
             onChange={(e) =>
               onChange(index, "fecha_nacimiento", e.target.value)
             }
-            className="w-full border-b border-slate-200 bg-transparent p-0.5 outline-none focus:border-blue-500 font-bold text-xs text-slate-600 cursor-pointer"
+            className="w-full border-b border-slate-200 bg-transparent p-0.5 outline-none focus:border-blue-500 font-bold text-xs text-slate-600 cursor-pointer text-green-600"
           />
         </div>
       </div>
@@ -137,7 +137,7 @@ export function GuestForm({
         placeholder="Celular de Referencia"
         value={huesped.celular}
         onChange={(e) => onChange(index, "celular", e.target.value)}
-        className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-500"
+        className="w-full border-b border-slate-200 bg-transparent p-1 outline-none focus:border-blue-500 font-bold text-xs placeholder:font-text-slate-500 text-green-600"
       />
       <div className="space-y-1">
   <select
