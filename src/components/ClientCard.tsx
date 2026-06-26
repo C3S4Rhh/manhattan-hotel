@@ -39,6 +39,7 @@ export function ClientCard({ data }: { data: any }) {
           <p><span className="text-slate-400">NAC:</span> {cliente.nacionalidad || "N/A"}</p>
           <p><span className="text-slate-400">CEL:</span> {cliente.celular || "N/A"}</p>
            <p><span className="text-slate-400">Estado Civil:</span> {cliente.estado_civil || "N/A"}</p>
+            <p><span className="text-slate-400">Estado Civil:</span> {cliente.fecha_nacimiento || "N/A"}</p>
         </div>
       </div>
 

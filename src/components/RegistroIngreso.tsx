@@ -33,6 +33,7 @@ export function RegistroIngreso({ onExito }: { onExito: () => void }) {
       <select name="categoria" className="w-full p-2 bg-slate-50 rounded-xl" required>
         <option>Lavandería</option>
         <option>Daños a propiedad</option>
+        <option>Desayunos extras</option>
         <option>Otros</option>
       </select>
       <input name="monto" type="number" placeholder="Monto Bs." className="w-full p-2 bg-slate-50 rounded-xl" required />

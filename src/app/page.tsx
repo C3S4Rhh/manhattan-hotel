@@ -21,6 +21,7 @@ import { GestionEgresos } from "@/components/GestionEgresos";
 import { VistaFinanzas } from "@/components/VistaFinanzas";
 import { RegistroIngreso } from "@/components/RegistroIngreso";
 import { GestionIngresos } from "@/components/GestionIngresos";
+import { GestionIngresosHabitaciones } from "@/components/GestionIngresosHabitaciones";
 
 export default function Home() {
   // Agregamos 'caja' a los tipos de vista permitidos en el estado
@@ -37,6 +38,8 @@ export default function Home() {
     | "finanzas"
     | "egresos"
     | "ingresos"
+    | "ingresoshabitaciones"
+
   >("mapa");
 
   const {
@@ -236,6 +239,17 @@ export default function Home() {
     
     {/* Usamos el componente consolidado que ya tiene filtros y lógica de impresión */}
     <GestionIngresos />
+  </div>
+)}
+{vista === "ingresoshabitaciones" && (
+  <div className="space-y-4">
+    <button
+      onClick={() => setVista("finanzas")}
+      className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] ml-8 mt-8"
+    >
+      ← Volver a Finanzas
+    </button>
+    <GestionIngresosHabitaciones />
   </div>
 )}
         {/* 5. VISTA: CAJA CHICA */}

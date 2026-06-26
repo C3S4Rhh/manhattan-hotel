@@ -97,7 +97,7 @@ export function CheckOutModal({
             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div>
                 <label className="text-[9px] font-black text-slate-500 uppercase">
-                  Medios días extra
+                  Dias de hospedaje
                 </label>
                 <input
                   type="number"
@@ -146,15 +146,17 @@ export function CheckOutModal({
           </div>
 
           {/* Input de Pago */}
-          
+
           <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl flex justify-between items-center">
-  <span className="text-[10px] font-black text-amber-700 uppercase">
-    Saldo tras este pago:
-  </span>
-  <span className={`text-md font-black ${ (saldoFinal - (pagoEfectivo + pagoQR)) > 0 ? "text-amber-600" : "text-emerald-600" }`}>
-    Bs. {(saldoFinal - (pagoEfectivo + pagoQR)).toFixed(2)}
-  </span>
-</div>
+            <span className="text-[10px] font-black text-amber-700 uppercase">
+              Saldo tras este pago:
+            </span>
+            <span
+              className={`text-md font-black ${saldoFinal - (pagoEfectivo + pagoQR) > 0 ? "text-amber-600" : "text-emerald-600"}`}
+            >
+              Bs. {(saldoFinal - (pagoEfectivo + pagoQR)).toFixed(2)}
+            </span>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[9px] font-black uppercase text-emerald-600">
