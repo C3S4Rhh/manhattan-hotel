@@ -13,19 +13,16 @@ import { CheckOutModal } from "@/components/CheckOutModal";
 import { DirectorioHabitaciones } from "@/components/DirectorioHabitaciones";
 import { ListaClientesRegistrados } from "@/components/ListaClientesRegistrados";
 import { ReportesFinancieros } from "@/components/ReportesFinancieros";
-import { PanelCaja } from "@/components/PanelCaja"; // <-- Importamos el nuevo módulo de caja
+import { PanelCaja } from "@/components/PanelCaja";
 import { HistorialCajas } from "@/components/HistorialCajas";
 import { CajaChica } from "@/components/CajaChica";
-import { PanelRegistrosHoy } from "@/components/PanelRegistrosHoy"; // <-- Nuevo import
+import { PanelRegistrosHoy } from "@/components/PanelRegistrosHoy";
 import { GestionEgresos } from "@/components/GestionEgresos";
 import { VistaFinanzas } from "@/components/VistaFinanzas";
-import { RegistroIngreso } from "@/components/RegistroIngreso";
 import { GestionIngresos } from "@/components/GestionIngresos";
 import { GestionIngresosHabitaciones } from "@/components/GestionIngresosHabitaciones";
 
 export default function Home() {
-  // Agregamos 'caja' a los tipos de vista permitidos en el estado
-  // En Home.tsx, cambia el tipo del estado a:
   const [vista, setVista] = useState<
     | "mapa"
     | "config"
@@ -39,7 +36,6 @@ export default function Home() {
     | "egresos"
     | "ingresos"
     | "ingresoshabitaciones"
-
   >("mapa");
 
   const {
@@ -61,10 +57,7 @@ export default function Home() {
     habitaciones,
   } = useDashboard();
   const [refresh, setRefresh] = useState(0);
-  // Hook para huéspedes con estancia activa (usado para el contador)
   const { huespedes } = useListaHuespedes();
-
-  // Hook para TODOS los clientes de la base de datos (usado para la tabla histórica)
   const { todosLosClientes, refrescar: refrescarClientes } =
     useClientesGlobal();
 
@@ -73,9 +66,7 @@ export default function Home() {
 
   return (
     <main className="bg-slate-50 min-h-screen">
-      {/* Le pasamos onCajaClick a la cabecera. Al presionarse, 
-        cambiará el estado interno a la vista del control de turnos 
-      */}
+     
       <Navbar
         usuario={usuarioActivo}
         setVista={setVista}
@@ -227,31 +218,31 @@ export default function Home() {
             <GestionEgresos />
           </div>
         )}
-{/* 4. VISTA: GESTIÓN DE INGRESOS EXTRAS */}
-{vista === "ingresos" && (
-  <div className="p-8">
-    <button
-      onClick={() => setVista("finanzas")}
-      className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors mb-4"
-    >
-      ← Volver a Finanzas
-    </button>
-    
-    {/* Usamos el componente consolidado que ya tiene filtros y lógica de impresión */}
-    <GestionIngresos />
-  </div>
-)}
-{vista === "ingresoshabitaciones" && (
-  <div className="space-y-4">
-    <button
-      onClick={() => setVista("finanzas")}
-      className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] ml-8 mt-8"
-    >
-      ← Volver a Finanzas
-    </button>
-    <GestionIngresosHabitaciones />
-  </div>
-)}
+        {/* 4. VISTA: GESTIÓN DE INGRESOS EXTRAS */}
+        {vista === "ingresos" && (
+          <div className="p-8">
+            <button
+              onClick={() => setVista("finanzas")}
+              className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors mb-4"
+            >
+              ← Volver a Finanzas
+            </button>
+
+            {/* Usamos el componente consolidado que ya tiene filtros y lógica de impresión */}
+            <GestionIngresos />
+          </div>
+        )}
+        {vista === "ingresoshabitaciones" && (
+          <div className="space-y-4">
+            <button
+              onClick={() => setVista("finanzas")}
+              className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] ml-8 mt-8"
+            >
+              ← Volver a Finanzas
+            </button>
+            <GestionIngresosHabitaciones />
+          </div>
+        )}
         {/* 5. VISTA: CAJA CHICA */}
         {vista === "cajachica" && (
           <div className="min-h-screen w-full bg-slate-50 p-6 md:p-12 animate-in fade-in duration-500">

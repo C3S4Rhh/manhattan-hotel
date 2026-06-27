@@ -54,7 +54,7 @@ export function GestionIngresosHabitaciones() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 p-8">
+    <div className="max-w-7xl mx-auto space-y-8 p-8">
       <header className="flex justify-between items-center">
         <h2 className="text-3xl font-black text-blue-900 uppercase tracking-tighter">Ingresos por Habitaciones</h2>
         <button 
@@ -79,30 +79,37 @@ export function GestionIngresosHabitaciones() {
         <table className="w-full text-left">
           <thead className="border-b uppercase text-[10px] text-slate-400">
             <tr>
-              <th className="p-4">Fecha</th>
-              <th className="p-4">Recepcionistas</th>
-              <th className="p-4">Huesped</th>
-              <th className="p-4">Habitación</th>
+              <th className="p-4 text-right">Fecha</th>
+              <th className="p-4 text-left">Recepcionistas</th>
+              <th className="p-4 text-left">Huesped</th>
+              <th className="p-4 text-right">Habitación</th>
               <th className="p-4 text-right">Monto efectivo</th>
               <th className="p-4 text-right">Monto qr</th>
               <th className="p-4 text-right">Monto total</th>
-              <th className="">Observaciones</th>
+              <th className="p-4 text-left">Observaciones</th>
             </tr>
           </thead>
           <tbody>
             {datos.map((d) => (
               <tr key={d.id} className="border-b hover:bg-slate-50">
-                <td className="p-4 font-bold">{new Date(d.fecha).toLocaleDateString()}</td>
+                 <td className="p-4 text-xs font-medium text-slate-500 whitespace-nowrap">
+                        <span className="block font-bold text-slate-700">
+                          {new Date(d.fecha).toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(d.fecha).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </td>
                 <td className="p-4 font-black">{d.usuarios?.nombre || 'Desconocido'}</td>
                 <td className="p-4 font-black">{d.huesped_referencia}</td>
                 <td className="p-4 font-bold text-slate-600">Hab. {d.nro_habitacion}</td>
-                <td className="p-4 text-right font-black text-blue-600">+{parseFloat(d.monto_efectivo || 0).toFixed(2)}Bs.
+                <td className="p-4 text-right font-black text-blue-600">{parseFloat(d.monto_efectivo || 0).toFixed(2)}Bs.
                 </td>
-                <td className="p-4 text-right font-black text-blue-600">+{parseFloat(d.monto_qr || 0).toFixed(2)}Bs.
+                <td className="p-4 text-right font-black text-blue-600">{parseFloat(d.monto_qr || 0).toFixed(2)}Bs.
                 </td>
                 <td className="p-4 text-right font-black text-green-600">+{parseFloat(d.monto_total || 0).toFixed(2)}Bs.
                 </td>
-                <td className="p font-black">{d.observaciones}</td>
+                <td className="py-3 text-slate-700">{d.observaciones}</td>
               </tr>
             ))}
           </tbody>

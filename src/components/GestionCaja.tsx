@@ -125,7 +125,7 @@ export function GestionCaja({ usuario, onClose }: any) {
 
             <div className="px-8 pb-8 overflow-y-auto">
               <div className="grid grid-cols-5 gap-4 px-4 py-2 text-[10px] font-black text-slate-400 uppercase">
-                <div>Cliente</div><div>Habitación</div><div>qr</div><div>efectivo</div><div className="text-right">Monto</div>
+                <div>Cliente</div><div>Habitación</div><div>efectivo</div><div>qr</div><div className="text-right">Monto</div>
               </div>
               <div className="space-y-3">
                 {movimientos.map((m) => (

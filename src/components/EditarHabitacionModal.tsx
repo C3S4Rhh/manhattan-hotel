@@ -9,7 +9,7 @@ const CONFIG_ESTADOS: Record<string, { border: string, bg: string, text: string,
     'sucio': { border: 'border-rose-300', bg: 'bg-rose-50', text: 'text-rose-500', label: 'Sucio', shadow: 'shadow-rose-100/50' },
     'alquiler': { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', label: 'Alquiler', shadow: 'shadow-orange-100/50' },
     'admin': { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', label: 'Admin', shadow: 'shadow-orange-100/50' },
-    'o': { border: 'border-rose-500', bg: 'bg-white', text: 'text-rose-600', label: 'Ocupada', shadow: 'shadow-rose-100/50' },
+    'o': { border: 'border-rose-500', bg: 'bg-yellow-100', text: 'text-rose-600', label: 'Ocupada', shadow: 'shadow-yellow-100/50' },
     'L': { border: 'border-emerald-500', bg: 'bg-white', text: 'text-emerald-600', label: 'Libre', shadow: 'shadow-emerald-100/50' }
 };
 
