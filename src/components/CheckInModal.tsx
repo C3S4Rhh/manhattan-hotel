@@ -1,22 +1,25 @@
 "use client";
+import { useState, useEffect } from "react";
 import { useCheckIn } from "@/hook/useCheckIn";
 import { GuestForm } from "./GuestForm";
 
 export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
   const {
     numPersonas,
+    diasEstadia, 
+    manejarCambioDias,
     huespedes,
     fechaIngreso,
     precioFinal,
     adelanto,
     cargando,
-    // Nuevos estados integrados
     pagoEfectivo,
     setPagoEfectivo,
     pagoQR,
     setPagoQR,
     estadoLimpieza,
-    setEstadoLimpieza,
+    setEstadoLimpieza, 
+    setPrecioBaseUnitario,
     setPrecioFinal,
     setFechaIngreso,
     manejarCambioPersonas,
@@ -80,8 +83,24 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
               <input
                 type="number"
                 value={precioFinal}
-                onChange={(e) => setPrecioFinal(Number(e.target.value))}
+                onChange={(e) => {
+                  const nuevoTotal = Number(e.target.value);
+                  setPrecioBaseUnitario(nuevoTotal / diasEstadia);
+                  setPrecioFinal(nuevoTotal);
+                }}
                 className="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-blue-500 bg-slate-50 font-bold text-blue-600"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
+                Días de estadía
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={diasEstadia}
+                onChange={(e) => manejarCambioDias(Number(e.target.value))}
+                className="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-blue-500 bg-slate-50 font-bold"
               />
             </div>
           </div>
@@ -142,8 +161,8 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
               </label>
               <input
                 type="number"
-                value={adelanto} // Ya no necesita onChange porque es automático
-                disabled // Evita que lo editen manualmente
+                value={adelanto} 
+                disabled 
                 className="w-full border-2 border-slate-100 p-3 rounded-xl bg-slate-100 font-bold text-emerald-600"
               />
             </div>

@@ -18,6 +18,7 @@ const calcularEdad = (fechaNacimiento: string): number => {
 
 export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
   const [numPersonas, setNumPersonas] = useState(1);
+  const [diasEstadia, setDiasEstadia] = useState(1);
   const [huespedes, setHuespedes] = useState([
     { nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '',estado_civil: '' }
   ]);
@@ -38,7 +39,19 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     const localISOTime = new Date(ahora.getTime() - offset).toISOString().slice(0, 16);
     setFechaIngreso(localISOTime);
   }, []);
+// 1. Agrega un estado para guardar el precio base original (para no perderlo al multiplicar)
+const [precioBaseUnitario, setPrecioBaseUnitario] = useState(hab?.precio_base || 0);
+const manejarCambioDias = (nuevosDias: number) => {
+  setDiasEstadia(nuevosDias);
+  // Multiplicas el precio base original por los nuevos días
+  setPrecioFinal(precioBaseUnitario * nuevosDias);
+};
 
+// 3. (Opcional) Si el usuario edita el precio manualmente, actualiza el precioBaseUnitario
+const actualizarPrecioManual = (nuevoPrecio: number) => {
+  setPrecioBaseUnitario(nuevoPrecio); // Esto evita que el cálculo se sobrescriba mal
+  setPrecioFinal(nuevoPrecio * diasEstadia);
+};
   const manejarCambioPersonas = (n: number) => {
     setNumPersonas(n);
     const nuevoArray = [...huespedes];
@@ -95,6 +108,7 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
           id_usuario: usuario?.id,
           nombre_huesped: huespedes[0].nombre,
           nro_pax: numPersonas,
+          cantidad_dias: diasEstadia,
           precio_acordado: Number(precioFinal),
           a_cuenta: Number(adelanto),
           saldo_total: saldo,
@@ -116,6 +130,7 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
           id_usuario: usuario?.id,
           nombre_huesped: huespedes[0].nombre,
           pax: numPersonas,
+
           precio_acordado: Number(precioFinal),
           adelanto: Number(adelanto),
           pago_efectivo: Number(pagoEfectivo),
@@ -151,7 +166,7 @@ if (Number(adelanto) > 0) {
       monto_saldo: saldo,             // El saldo restante calculado
       huesped_referencia: huespedes[0].nombre,
       // Formato de observación idéntico a tus registros anteriores
-      observaciones: `Adelanto Check-In Hab. #${hab?.numero} - Con deuda - Queda pendiente un saldo de ${saldo} Bs.`,
+      observaciones: `Adelanto Check-In Hab. #${hab?.numero} por ${diasEstadia} día(s).- Con deuda - Queda pendiente un saldo de ${saldo} Bs.`,
       fecha: new Date().toISOString()
     }]);
 
@@ -205,11 +220,14 @@ if (Number(adelanto) > 0) {
   };
 
   return {
-    numPersonas, huespedes, fechaIngreso, precioFinal, adelanto, cargando,
+    numPersonas,diasEstadia,      // <--- AÑADE ESTO
+  manejarCambioDias, huespedes, fechaIngreso, precioFinal, adelanto, cargando,
     pagoEfectivo, setPagoEfectivo, // Exportar nuevos estados
     pagoQR, setPagoQR,
     estadoLimpieza, setEstadoLimpieza,
-    setPrecioFinal, setFechaIngreso,
+    setPrecioFinal,precioBaseUnitario,      // <--- Agrégalo aquí
+    setPrecioBaseUnitario, setFechaIngreso,
     manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso
+    
   };
 }

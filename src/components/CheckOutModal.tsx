@@ -1,10 +1,9 @@
 "use client";
-import { useState, useEffect } from "react"; // <--- Asegúrate de tener useEffect aquí
-import { supabase } from "@/lib/supabase"; //
+import { useState, useEffect } from "react"; 
+import { supabase } from "@/lib/supabase"; 
 import { useCheckOut } from "@/hook/useCheckOut";
 import { HuespedItem } from "./HuespedItem";
-// <--- Asegúrate de importar useState
-import { CambioHabitacionModal } from "./CambioHabitacionModal"; // <--- Importa el componente
+import { CambioHabitacionModal } from "./CambioHabitacionModal"; 
 
 export function CheckOutModal({
   hab,
@@ -15,22 +14,21 @@ export function CheckOutModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const [datosHospedaje, setDatosHospedaje] = useState<any>(null);
   const [pagoEfectivo, setPagoEfectivo] = useState(0);
   const [pagoQR, setPagoQR] = useState(0);
-  const [abiertoCambio, setAbiertoCambio] = useState(false); // <--- Agrega esto
+  const [abiertoCambio, setAbiertoCambio] = useState(false); 
   const {
     registro,
     huespedesDetalle,
     cargando,
-    pagoFinal,
     procesando,
     saldoLiquidado,
     saldoFinal,
     diasExtra,
     setDiasExtra,
-    descuentoPorcentaje,
-    setDescuentoPorcentaje,
-    setPagoFinal,
+    descuentoMonto,
+    setDescuentoMonto,
     retirarHuesped,
     realizarSalidaTotal,
     registrarPagoParcial,
@@ -43,16 +41,21 @@ export function CheckOutModal({
         .from("hospedajes")
         .update({
           medios_dias_extra: diasExtra,
-          descuento_porcentaje: descuentoPorcentaje,
+          descuento_monto: descuentoMonto,
         })
         .eq("id", registro.id);
     };
 
     const timer = setTimeout(guardarAjustes, 500);
     return () => clearTimeout(timer);
-  }, [diasExtra, descuentoPorcentaje, registro?.id]);
-
+  }, [diasExtra, descuentoMonto, registro?.id]);
+useEffect(() => {
+  if (registro) {
+    setDatosHospedaje(registro);
+  }
+}, [registro]);
   if (cargando) return null;
+
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -73,23 +76,23 @@ export function CheckOutModal({
 
         <div className="p-8 space-y-6 overflow-y-auto">
           {/* Listado de Huéspedes */}
+          <div className="bg-blue-50 p-1 rounded-xl border border-blue-100 text-center">
+  <p className="text-[9px] font-black text-blue-400 uppercase">Días contratados</p>
+  <p className="text-sm font-black text-blue-700">{registro?.cantidad_dias || 0} Días</p>
+</div>
           <div className="space-y-3">
             <p className="text-[10px] font-black text-slate-400 uppercase ml-1">
               Huéspedes en habitación
             </p>
-            {huespedesDetalle.length > 0 ? (
-              huespedesDetalle.map((item) => (
-                <HuespedItem
-                  key={item.id}
-                  item={item}
-                  onRetirar={retirarHuesped}
-                />
-              ))
-            ) : (
-              <p className="text-xs text-slate-400 italic text-center py-2">
-                No hay huéspedes registrados.
-              </p>
-            )}
+            {huespedesDetalle.map((item) => (
+  <HuespedItem
+    key={item.id}
+    item={item}
+    // Usamos el objeto 'registro' que viene de tu hook useCheckOut
+    fechaIngreso={registro?.fecha_ingreso} 
+    onRetirar={retirarHuesped}
+  />
+))}
           </div>
 
           {/* Sección de Ajustes Manuales */}
@@ -97,26 +100,25 @@ export function CheckOutModal({
             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div>
                 <label className="text-[9px] font-black text-slate-500 uppercase">
-                  Dias de hospedaje
+                  Dias de hospedaje extra
                 </label>
                 <input
                   type="number"
-                  step="0.5"
+                  step="1"
                   value={diasExtra}
-                  onChange={(e) => setDiasExtra(Number(e.target.value))}
+                  onChange={(e) => setDiasExtra(Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full p-2 rounded-lg border text-sm font-bold"
                 />
               </div>
               <div>
                 <label className="text-[9px] font-black text-slate-500 uppercase">
-                  % Descuento
+                Descuento BS
                 </label>
                 <input
                   type="number"
-                  value={descuentoPorcentaje}
+                  value={descuentoMonto}
                   onChange={(e) =>
-                    setDescuentoPorcentaje(Number(e.target.value))
-                  }
+                    setDescuentoMonto(Math.max(0, parseInt(e.target.value) || 0))}
                   className="w-full p-2 rounded-lg border text-sm font-bold text-emerald-600"
                 />
               </div>

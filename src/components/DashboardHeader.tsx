@@ -7,10 +7,11 @@ interface HeaderProps {
   setSoloOcupadas: (v: boolean) => void;
   usuarioNombre: string;
   cantidadHuespedes: number;
-  
+
   onConfigClick: () => void;
-  onClientesClick: () => void; // <--- Nueva prop para Clientes
+  onClientesClick: () => void; 
   onRegistrosClick: () => void;
+  onReservasClick: () => void;
 }
 
 export function DashboardHeader({
@@ -20,10 +21,11 @@ export function DashboardHeader({
   setSoloOcupadas,
   usuarioNombre,
   cantidadHuespedes,
-  
+
   onConfigClick,
-  onClientesClick, // <--- La recibimos aquí
+  onClientesClick, 
   onRegistrosClick,
+  onReservasClick,
 }: HeaderProps) {
   return (
     <div className="flex justify-between items-center mb-8">
@@ -33,7 +35,7 @@ export function DashboardHeader({
             ? "Directorio de Huéspedes"
             : soloOcupadas
               ? "Gestión de Salidas (Check-out)"
-              : "Estado de Habitaciones"}
+              : "Habitaciones"}
         </h1>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           Hotel Manhattan • {usuarioNombre}
@@ -49,6 +51,16 @@ export function DashboardHeader({
           <div className="bg-white p-1.5 rounded-lg shadow-sm">📋</div>
           <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700">
             Registros
+          </span>
+        </button>
+        {/* --- NUEVO: Botón exclusivo para Reservas --- */}
+        <button
+          onClick={onReservasClick}
+          className="flex items-center gap-3 bg-emerald-50 p-1 px-5 rounded-2xl shadow-sm border border-emerald-100 hover:bg-emerald-100 transition-all"
+        >
+          <div className="bg-white p-1.5 rounded-lg shadow-sm">🗓️</div>
+          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700">
+            Reservas
           </span>
         </button>
         {/* Botón de Huéspedes En Casa */}
@@ -78,7 +90,7 @@ export function DashboardHeader({
             setSoloOcupadas(!soloOcupadas);
             if (verHuespedes) setVerHuespedes(false);
           }}
-          className={`px-6 py-4 rounded-xl font-black text-[10px] uppercase transition-all ${
+          className={`px-4 py-4 rounded-xl font-black text-[10px] uppercase transition-all ${
             soloOcupadas
               ? "bg-rose-600 text-white shadow-lg shadow-rose-200"
               : "bg-white text-slate-600 border-2 border-slate-100 hover:border-blue-400"
@@ -97,18 +109,16 @@ export function DashboardHeader({
             Reg. de Clientes
           </span>
         </button>
-       {/* Botón Habitaciones */}
-<button 
-  onClick={onConfigClick}
-  className="flex items-center gap-3 bg-white p-1 px-5 rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-all"
->
-  <div className="bg-orange-50 p-1.5 rounded-lg">
-    ⚙️
-  </div>
-  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-    Habitaciones
-  </span>
-</button>
+        {/* Botón Habitaciones */}
+        <button
+          onClick={onConfigClick}
+          className="flex items-center gap-3 bg-white p-1 px-5 rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-all"
+        >
+          <div className="bg-orange-50 p-1.5 rounded-lg">⚙️</div>
+          <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+            Habitaciones
+          </span>
+        </button>
       </div>
     </div>
   );

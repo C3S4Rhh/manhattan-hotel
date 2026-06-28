@@ -12,7 +12,7 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
 
   // NUEVOS ESTADOS PARA DÍAS EXTRA Y DESCUENTOS
   const [diasExtra, setDiasExtra] = useState(0)
-  const [descuentoPorcentaje, setDescuentoPorcentaje] = useState(0)
+ const [descuentoMonto, setDescuentoMonto] = useState(0);
 
   useEffect(() => {
     const obtenerDatos = async () => {
@@ -20,11 +20,12 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
         .from('hospedajes')
         .select(`
           *,medios_dias_extra,
-    descuento_porcentaje,
+    descuento_monto,
+    fecha_ingreso,
           detalle_hospedaje_huespedes (
             id,
             estado,
-            clientes ( nombre, documento, profesion )
+            clientes ( nombre, documento, profesion,ultima_visita )
           )
         `)
         .eq('id_habitacion', hab.id)
@@ -33,7 +34,7 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
 
       if (hospedaje) {
         setDiasExtra(hospedaje.medios_dias_extra || 0);
-  setDescuentoPorcentaje(hospedaje.descuento_porcentaje || 0);
+  setDescuentoMonto(hospedaje.descuento_monto || 0);
         setRegistro(hospedaje)
         const pendiente = (hospedaje.precio_acordado || 0) - (hospedaje.a_cuenta || 0);
         setPagoFinal(pendiente > 0 ? pendiente : 0);
@@ -52,17 +53,18 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
  const precioBase = Number(registro?.precio_acordado || 0);
   
   // 2. Aumento por medios días (si decides seguir usando el input)
-  const aumento = diasExtra * (precioBase / 2);
+ const precioPorDia = precioBase / (registro?.cantidad_dias || 1); 
+  const aumento = diasExtra * precioPorDia;
   
   // 3. Subtotal
   const subtotal = precioBase + aumento;
   
   // 4. Descuento
-  const descuento = subtotal * (descuentoPorcentaje / 100);
+ const totalConDescuento = subtotal - descuentoMonto;
   
   // 5. Saldo final
   const aCuenta = Number(registro?.a_cuenta || 0);
-  return (subtotal - descuento) - aCuenta;
+  return totalConDescuento - aCuenta;
   };
 
   const saldoFinal = calcularSaldoFinal();
@@ -180,7 +182,7 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
           monto_total: pagoFinal,
           monto_a_cuenta: pagoFinal,
           huesped_referencia: registro.detalle_hospedaje_huespedes?.[0]?.clientes?.nombre || 'Checkout Hab. ' + hab.numero,
-          observaciones: `Checkout. Extra: ${diasExtra} medios días. Desc: ${descuentoPorcentaje}%`
+          observaciones: `Checkout. Extra: ${diasExtra} medios días. Desc: ${descuentoMonto}%`
         }]);
       }
 
@@ -233,7 +235,7 @@ onSuccess();
     // Nuevos estados para el modal
     diasExtra,
     setDiasExtra,
-    descuentoPorcentaje,
-    setDescuentoPorcentaje
+    descuentoMonto,
+    setDescuentoMonto
   }
 }

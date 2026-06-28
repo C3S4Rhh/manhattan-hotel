@@ -21,6 +21,7 @@ import { GestionEgresos } from "@/components/GestionEgresos";
 import { VistaFinanzas } from "@/components/VistaFinanzas";
 import { GestionIngresos } from "@/components/GestionIngresos";
 import { GestionIngresosHabitaciones } from "@/components/GestionIngresosHabitaciones";
+import { VistaReservas } from "@/components/VistaReservas";
 
 export default function Home() {
   const [vista, setVista] = useState<
@@ -36,6 +37,7 @@ export default function Home() {
     | "egresos"
     | "ingresos"
     | "ingresoshabitaciones"
+    | "reservas"
   >("mapa");
 
   const {
@@ -89,11 +91,9 @@ export default function Home() {
               usuarioNombre={usuarioActivo.nombre}
               cantidadHuespedes={huespedes.length}
               onConfigClick={() => setVista("config")}
-              onClientesClick={() => {
-                refrescarClientes();
-                setVista("clientes");
-              }}
+              onClientesClick={() => {refrescarClientes();setVista("clientes");}}
               onRegistrosClick={() => setVista("registros")}
+              onReservasClick={() => setVista("reservas")}
             />
 
             <div className="flex gap-6">
@@ -142,6 +142,17 @@ export default function Home() {
             />
           </div>
         )}
+        {vista === "reservas" && (
+  <div className="space-y-6">
+    <button
+      onClick={() => setVista("mapa")}
+      className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors"
+    >
+      ← Volver al mapa
+    </button>
+    <VistaReservas />
+  </div>
+)}
         {vista === "registros" && (
           <div className="space-y-6">
             <button
