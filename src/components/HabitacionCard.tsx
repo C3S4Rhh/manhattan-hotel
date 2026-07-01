@@ -47,11 +47,11 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
       shadow: 'shadow-orange-100/50'
     },
     'o': { 
-      border: 'border-rose-500', 
-      bg: 'bg-yellow-100', 
-      text: 'text-rose-600', 
+      border: 'border-green-700', 
+      bg: 'bg-green-200', 
+      text: 'text-rose-500', 
       label: 'Ocupada',
-      shadow: 'shadow-yellow-100/50'
+      shadow: 'shadow-green-100/50'
     },
     'L': { 
       border: 'border-emerald-500', 

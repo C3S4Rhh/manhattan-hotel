@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-export const registrarReservaConAdelanto = async (datosReserva: any, montoAdelanto: number) => {
-  
+export const registrarReservaConAdelanto = async (datosReserva: any, montoAdelanto: number, tipoPago: string) => {
   // 1. Insertar la reserva
   const { data: reserva, error: resError } = await supabase
     .from('reservas')
@@ -19,17 +18,17 @@ export const registrarReservaConAdelanto = async (datosReserva: any, montoAdelan
 
   if (resError) throw resError;
 
-  // 2. Si hubo adelanto, registrar en caja_movimientos
-  // Usamos el ID de la reserva recién creada para mantener la integridad
+  // 2. Registrar en caja_movimientos
   if (montoAdelanto > 0) {
     const { error: cajaError } = await supabase.from('caja_movimientos').insert([{
       tipo_movimiento: 'ingreso',
       categoria: 'Adelanto Reserva',
       monto_total: montoAdelanto,
-      monto_efectivo: montoAdelanto, // Puedes ajustar esto si recibes QR
-      observaciones: `Adelanto de reserva: ${datosReserva.huesped_nombre}`,
-      id_habitacion: datosReserva.id_habitacion, // Enlazamos con la habitación
-      nro_habitacion: datosReserva.nro_habitacion, // Asegúrate de pasar este dato
+      monto_efectivo: tipoPago === 'efectivo' ? montoAdelanto : 0,
+      monto_qr: tipoPago === 'qr' ? montoAdelanto : 0,
+      observaciones: `Adelanto (${tipoPago}): ${datosReserva.huesped_nombre}`,
+      id_habitacion: datosReserva.id_habitacion,
+      nro_habitacion: String(datosReserva.nro_habitacion || 'N/A'),
       fecha: new Date().toISOString()
     }]);
 

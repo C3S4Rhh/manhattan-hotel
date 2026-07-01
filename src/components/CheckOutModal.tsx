@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect } from "react"; 
-import { supabase } from "@/lib/supabase"; 
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { useCheckOut } from "@/hook/useCheckOut";
 import { HuespedItem } from "./HuespedItem";
-import { CambioHabitacionModal } from "./CambioHabitacionModal"; 
+import { CambioHabitacionModal } from "./CambioHabitacionModal";
 
 export function CheckOutModal({
   hab,
@@ -17,7 +17,7 @@ export function CheckOutModal({
   const [datosHospedaje, setDatosHospedaje] = useState<any>(null);
   const [pagoEfectivo, setPagoEfectivo] = useState(0);
   const [pagoQR, setPagoQR] = useState(0);
-  const [abiertoCambio, setAbiertoCambio] = useState(false); 
+  const [abiertoCambio, setAbiertoCambio] = useState(false);
   const {
     registro,
     huespedesDetalle,
@@ -49,13 +49,12 @@ export function CheckOutModal({
     const timer = setTimeout(guardarAjustes, 500);
     return () => clearTimeout(timer);
   }, [diasExtra, descuentoMonto, registro?.id]);
-useEffect(() => {
-  if (registro) {
-    setDatosHospedaje(registro);
-  }
-}, [registro]);
+  useEffect(() => {
+    if (registro) {
+      setDatosHospedaje(registro);
+    }
+  }, [registro]);
   if (cargando) return null;
-
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -77,25 +76,29 @@ useEffect(() => {
         <div className="p-8 space-y-6 overflow-y-auto">
           {/* Listado de Huéspedes */}
           <div className="bg-blue-50 p-1 rounded-xl border border-blue-100 text-center">
-  <p className="text-[9px] font-black text-blue-400 uppercase">Días contratados</p>
-  <p className="text-sm font-black text-blue-700">{registro?.cantidad_dias || 0} Días</p>
-</div>
+            <p className="text-[9px] font-black text-blue-400 uppercase">
+              Días contratados
+            </p>
+            <p className="text-sm font-black text-blue-700">
+              {registro?.cantidad_dias || 0} Días
+            </p>
+          </div>
           <div className="space-y-3">
             <p className="text-[10px] font-black text-slate-400 uppercase ml-1">
               Huéspedes en habitación
             </p>
             {huespedesDetalle.map((item) => (
-  <HuespedItem
-    key={item.id}
-    item={item}
-    // Usamos el objeto 'registro' que viene de tu hook useCheckOut
-    fechaIngreso={registro?.fecha_ingreso} 
-    onRetirar={retirarHuesped}
-  />
-))}
+              <HuespedItem
+                key={item.id}
+                item={item}
+                // Usamos el objeto 'registro' que viene de tu hook useCheckOut
+                fechaIngreso={registro?.fecha_ingreso}
+                onRetirar={retirarHuesped}
+              />
+            ))}
           </div>
 
-          {/* Sección de Ajustes Manuales */}
+          {/* Sección de Ajustes Manuales para los dias de 0  para arriba = onChange={(e) => setDiasExtra(Math.max(0, parseInt(e.target.value) || 0))}*/}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div>
@@ -104,21 +107,24 @@ useEffect(() => {
                 </label>
                 <input
                   type="number"
-                  step="1"
+                  step="0.5"
                   value={diasExtra}
-                  onChange={(e) => setDiasExtra(Math.max(0, parseInt(e.target.value) || 0))}
+                  onChange={(e) => setDiasExtra(Number(e.target.value))}
                   className="w-full p-2 rounded-lg border text-sm font-bold"
                 />
               </div>
               <div>
                 <label className="text-[9px] font-black text-slate-500 uppercase">
-                Descuento BS
+                  Descuento BS
                 </label>
                 <input
                   type="number"
                   value={descuentoMonto}
                   onChange={(e) =>
-                    setDescuentoMonto(Math.max(0, parseInt(e.target.value) || 0))}
+                    setDescuentoMonto(
+                      Math.max(0, parseInt(e.target.value) || 0),
+                    )
+                  }
                   className="w-full p-2 rounded-lg border text-sm font-bold text-emerald-600"
                 />
               </div>
