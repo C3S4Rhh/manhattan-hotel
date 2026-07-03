@@ -10,7 +10,7 @@ const CONFIG_ESTADOS: Record<string, { border: string, bg: string, text: string,
     'sucio': { border: 'border-rose-300', bg: 'bg-rose-50', text: 'text-rose-500', label: 'Sucio', shadow: 'shadow-rose-100/50', hex: '#f43f5e' },
     'alquiler': { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', label: 'Alquiler', shadow: 'shadow-orange-100/50', hex: '#f97316' },
     'admin': { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-600', label: 'Admin', shadow: 'shadow-orange-100/50', hex: '#f97316' },
-    'o': { border: 'border-green-700', bg: 'bg-green-200', text: 'text-rose-500', label: 'Ocupada', shadow: 'shadow-green-100/50', hex: '#e11d48' },
+    'O': { border: 'border-green-700', bg: 'bg-green-200', text: 'text-rose-500', label: 'Ocupada', shadow: 'shadow-green-100/50', hex: '#e11d48' },
     'L': { border: 'border-emerald-500', bg: 'bg-white', text: 'text-emerald-600', label: 'Libre', shadow: 'shadow-emerald-100/50', hex: '#10b981' }
 };
 
