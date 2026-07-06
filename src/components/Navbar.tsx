@@ -113,7 +113,7 @@ export function Navbar({
         </div>
 
         <div className="flex items-center gap-6">
-          {esAdmin && (
+          {esAutorizado && (
             <button
               onClick={() => setVista("finanzas")} // Cambiado a 'finanzas'
               className="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-rose-500/20 uppercase tracking-wider"

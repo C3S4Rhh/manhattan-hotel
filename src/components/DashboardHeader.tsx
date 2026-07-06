@@ -9,7 +9,7 @@ interface HeaderProps {
   cantidadHuespedes: number;
 
   onConfigClick: () => void;
-  onClientesClick: () => void; 
+  onClientesClick: () => void;
   onRegistrosClick: () => void;
   onReservasClick: () => void;
 }
@@ -23,7 +23,7 @@ export function DashboardHeader({
   cantidadHuespedes,
 
   onConfigClick,
-  onClientesClick, 
+  onClientesClick,
   onRegistrosClick,
   onReservasClick,
 }: HeaderProps) {

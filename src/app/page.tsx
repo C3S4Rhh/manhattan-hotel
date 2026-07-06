@@ -68,7 +68,6 @@ export default function Home() {
 
   return (
     <main className="bg-slate-50 min-h-screen">
-     
       <Navbar
         usuario={usuarioActivo}
         setVista={setVista}
@@ -91,7 +90,10 @@ export default function Home() {
               usuarioNombre={usuarioActivo.nombre}
               cantidadHuespedes={huespedes.length}
               onConfigClick={() => setVista("config")}
-              onClientesClick={() => {refrescarClientes();setVista("clientes");}}
+              onClientesClick={() => {
+                refrescarClientes();
+                setVista("clientes");
+              }}
               onRegistrosClick={() => setVista("registros")}
               onReservasClick={() => setVista("reservas")}
             />
@@ -143,16 +145,16 @@ export default function Home() {
           </div>
         )}
         {vista === "reservas" && (
-  <div className="space-y-6">
-    <button
-      onClick={() => setVista("mapa")}
-      className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors"
-    >
-      ← Volver al mapa
-    </button>
-    <VistaReservas />
-  </div>
-)}
+          <div className="space-y-6">
+            <button
+              onClick={() => setVista("mapa")}
+              className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              ← Volver al mapa de habitaciones
+            </button>
+            <VistaReservas />
+          </div>
+        )}
         {vista === "registros" && (
           <div className="space-y-6">
             <button
@@ -205,7 +207,6 @@ export default function Home() {
         )}
 
         {/* vistas de finanzas con egresos e ingresos extras */}
-
         {vista === "finanzas" && (
           <div className="p-8">
             <button
@@ -214,7 +215,12 @@ export default function Home() {
             >
               ← Volver al mapa
             </button>
-            <VistaFinanzas onSelect={(v) => setVista(v)} />
+
+            {/* Pasamos el usuario para que VistaFinanzas sepa qué botones mostrar */}
+            <VistaFinanzas
+              usuario={usuarioActivo}
+              onSelect={(v) => setVista(v)}
+            />
           </div>
         )}
 
