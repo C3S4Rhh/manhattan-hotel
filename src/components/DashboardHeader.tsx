@@ -21,7 +21,6 @@ export function DashboardHeader({
   setSoloOcupadas,
   usuarioNombre,
   cantidadHuespedes,
-
   onConfigClick,
   onClientesClick,
   onRegistrosClick,

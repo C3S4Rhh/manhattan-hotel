@@ -90,10 +90,7 @@ export default function Home() {
               usuarioNombre={usuarioActivo.nombre}
               cantidadHuespedes={huespedes.length}
               onConfigClick={() => setVista("config")}
-              onClientesClick={() => {
-                refrescarClientes();
-                setVista("clientes");
-              }}
+              onClientesClick={() => {refrescarClientes();  setVista("clientes");   }}
               onRegistrosClick={() => setVista("registros")}
               onReservasClick={() => setVista("reservas")}
             />
