@@ -9,10 +9,8 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
   const [cargando, setCargando] = useState(true)
   const [pagoFinal, setPagoFinal] = useState<number>(0)
   const [procesando, setProcesando] = useState(false)
-
-  // NUEVOS ESTADOS PARA DÍAS EXTRA Y DESCUENTOS
   const [diasExtra, setDiasExtra] = useState(0)
- const [descuentoMonto, setDescuentoMonto] = useState(0);
+  const [descuentoMonto, setDescuentoMonto] = useState(0);
 
   useEffect(() => {
     const obtenerDatos = async () => {
@@ -48,21 +46,12 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
     if (hab?.id) obtenerDatos()
   }, [hab.id])
 
-  // LÓGICA DE CÁLCULO DINÁMICO
   const calcularSaldoFinal = () => {
- const precioBase = Number(registro?.precio_acordado || 0);
-  
-  // 2. Aumento por medios días (si decides seguir usando el input)
- const precioPorDia = precioBase / (registro?.cantidad_dias || 1); 
+  const precioBase = Number(registro?.precio_acordado || 0);
+  const precioPorDia = precioBase / (registro?.cantidad_dias || 1); 
   const aumento = diasExtra * precioPorDia;
-  
-  // 3. Subtotal
   const subtotal = precioBase + aumento;
-  
-  // 4. Descuento
- const totalConDescuento = subtotal - descuentoMonto;
-  
-  // 5. Saldo final
+  const totalConDescuento = subtotal - descuentoMonto;
   const aCuenta = Number(registro?.a_cuenta || 0);
   return totalConDescuento - aCuenta;
   };
@@ -86,10 +75,8 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
 const registrarCargaDiaExtra = async (montoBaseHabitacion: number) => {
   setProcesando(true);
   try {
-    // Calculamos el valor del cargo (mitad o entero) basado en el precio base real
-    const cargo = montoBaseHabitacion; 
     
-    // Sumamos este cargo al precio_acordado actual para mantener la deuda actualizada
+    const cargo = montoBaseHabitacion; 
     const nuevoPrecioAcordado = Number(registro.precio_acordado || 0) + cargo;
     
     await supabase.from('hospedajes')
@@ -103,7 +90,6 @@ const registrarCargaDiaExtra = async (montoBaseHabitacion: number) => {
     setProcesando(false);
   }
 };
-// En tu useCheckOut.ts, añade/actualiza esta función:
 const registrarPagoParcial = async (efectivo: number, qr: number) => {
   const montoTotal = Number(efectivo) + Number(qr);
   if (montoTotal <= 0) return;
@@ -147,7 +133,7 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
       .update({ a_cuenta: (registro.a_cuenta || 0) + montoTotal })
       .eq('id', registro.id);
 
-    onSuccess(); // Esto refrescará los datos del modal
+    onSuccess(); 
   } catch (e: any) {
     console.error("Error en pago:", e);
     alert("Error al registrar el pago: " + e.message);
@@ -197,15 +183,12 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
       await habitacionesService.checkOut(hab.id);
       
       onSuccess();
-      // ... dentro de realizarSalidaTotal ...
-
-// 4. LIBERAR HABITACIÓN Y PONER EN ESTADO SUCIO
-// Modificamos la llamada para actualizar el estado_limpieza a 'sucio'
+    
 await supabase
   .from('habitaciones')
   .update({ 
-    estado_actual: 'sucio',        // Cambia a Libre
-    estado_limpieza: 'sucio'   // Automáticamente se pone en Sucio
+    estado_actual: 'sucio',        
+    estado_limpieza: 'sucio'   
   })
   .eq('id', hab.id);
 
@@ -226,13 +209,12 @@ onSuccess();
     pagoFinal,
     procesando,
     saldoLiquidado,
-    saldoFinal, // Nuevo valor calculado
+    saldoFinal, 
     setPagoFinal,
     registrarCargaDiaExtra,
     registrarPagoParcial,
     retirarHuesped,
     realizarSalidaTotal,
-    // Nuevos estados para el modal
     diasExtra,
     setDiasExtra,
     descuentoMonto,

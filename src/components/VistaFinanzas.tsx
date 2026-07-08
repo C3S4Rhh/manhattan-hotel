@@ -54,7 +54,7 @@ export function VistaFinanzas({
           >
             <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-6">🏨</div>
             <p className="font-black text-slate-800 text-lg uppercase">Ingresos Habitaciones</p>
-            <p className="text-xs text-slate-400 font-bold mt-1">Ingresos derivados de caja_movimientos.</p>
+            <p className="text-xs text-slate-400 font-bold mt-1">Ingresos del hotel</p>
           </button>
         )}
       </div>

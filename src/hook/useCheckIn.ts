@@ -166,7 +166,7 @@ if (Number(adelanto) > 0) {
       monto_saldo: saldo,             // El saldo restante calculado
       huesped_referencia: huespedes[0].nombre,
       // Formato de observación idéntico a tus registros anteriores
-      observaciones: `Adelanto Check-In Hab. #${hab?.numero} por ${diasEstadia} día(s).- Con deuda - Queda pendiente un saldo de ${saldo} Bs.`,
+      observaciones: `Check-In Hab. #${hab?.numero} por ${diasEstadia} día(s).- Con deuda - Queda pendiente un saldo de ${saldo} Bs.`,
       fecha: new Date().toISOString()
     }]);
 

@@ -5,6 +5,7 @@ export function TablaGastos({ gastos }: { gastos: any[] }) {
         <thead>
           <tr className="bg-slate-50 border-b border-slate-100">
             <th className="p-4 font-black text-slate-400 text-[10px] uppercase">Fecha</th>
+            <th className="p-4 font-black text-slate-400 text-[10px] uppercase">responsable</th>
             <th className="p-4 font-black text-slate-400 text-[10px] uppercase">Descripción</th>
             <th className="p-4 font-black text-slate-400 text-[10px] uppercase">Categoría</th>
             <th className="p-4 font-black text-slate-400 text-[10px] uppercase">Pago</th>
@@ -17,6 +18,7 @@ export function TablaGastos({ gastos }: { gastos: any[] }) {
               <td className="p-4 text-xs font-bold text-slate-600">
                 {new Date(g.fecha || g.created_at).toLocaleDateString()}
               </td>
+              <td className="p-4 text-xs font-bold text-slate-500 uppercase">{g.responsable|| 'admin'}</td>
               <td className="p-4 text-sm font-black text-slate-800">{g.descripcion}</td>
               <td className="p-4 text-xs font-bold text-slate-500 uppercase">{g.categoria}</td>
               <td className="p-4 text-xs font-bold text-slate-500 uppercase">{g.tipo_pago}</td>
