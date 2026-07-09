@@ -42,11 +42,47 @@ export function GestionCaja({ usuario, onClose }: any) {
   };
 
   const abrirCaja = async () => {
-    /* Tu lógica de abrirCaja */
-  };
+  if (!montoInicial || parseFloat(montoInicial) < 0) {
+    return alert("Ingrese un monto inicial válido");
+  }
+
+  const { error } = await supabase.from("cajas").insert([{
+    usuario_id: usuario.id,
+    monto_apertura: parseFloat(montoInicial),
+    estado: "abierta",
+    fecha_apertura: new Date().toISOString()
+  }]);
+
+  if (error) {
+    console.error("Error al abrir caja:", error);
+    alert("No se pudo abrir la caja.");
+  } else {
+    cargarDatos(); // Refresca los datos para que aparezca la interfaz de caja activa
+  }
+};
   const cerrarCaja = async () => {
-    /* Tu lógica de cerrarCaja */
-  };
+  if (!cajaActiva) return;
+  
+  const montoFinal = parseFloat(montoCierre);
+  if (isNaN(montoFinal)) {
+    return alert("Ingrese un monto real contado.");
+  }
+
+  const { error } = await supabase.from("cajas").update({ 
+    estado: "cerrada", 
+    monto_cierre: montoFinal, 
+    fecha_cierre: new Date().toISOString() 
+  }).eq("id", cajaActiva.id);
+  
+  if (error) {
+    console.error("Error al cerrar caja:", error);
+    alert("No se pudo cerrar la caja.");
+  } else {
+    alert("Caja cerrada exitosamente.");
+    setMostrarModalCierre(false);
+    cargarDatos(); // Esto hará que el componente detecte que ya no hay caja abierta
+  }
+};
 
   const totalIngresos = movimientos.reduce(
     (acc, m) => acc + (Number(m.monto_a_cuenta) || 0),
