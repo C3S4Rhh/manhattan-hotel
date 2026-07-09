@@ -6,7 +6,6 @@ export const registrarIngreso = async (ingreso: any) => {
   return data;
 };
 
-// Nueva función que acepta rango de fechas
 export const obtenerIngresosPorRango = async (inicio: string, fin: string) => {
 // inicio y fin son strings como "2026-06-19"
   

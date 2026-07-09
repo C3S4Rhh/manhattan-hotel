@@ -7,7 +7,7 @@ export const generarReporteCaja = async (usuario: any, movimientos: any[], gasto
   doc.setFontSize(18);
   doc.text("Reporte de Cierre de Caja", 14, 20);
   doc.setFontSize(10);
-  doc.text(`Operador: ${usuario.nombre || "Cesar"}`, 14, 30);
+  doc.text(`Operador: ${usuario.nombre || "de turno"}`, 14, 30);
   doc.text(`Fecha: ${new Date().toLocaleString()}`, 14, 35);
 
   const rowsMovimientos = movimientos.map((m) => [

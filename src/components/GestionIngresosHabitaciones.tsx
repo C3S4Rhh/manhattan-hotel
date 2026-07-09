@@ -1,119 +1,204 @@
 "use client";
 import { useState, useEffect } from "react";
 import { obtenerMovimientosHabitaciones } from "@/services/cajaService";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export function GestionIngresosHabitaciones() {
   const [datos, setDatos] = useState<any[]>([]);
-  const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
-  const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
+  // Inicializamos los totales incluyendo mensual y anual
+  const [totales, setTotales] = useState({
+    gastos: 0,
+    ingresosExtra: 0,
+    mensual: 0,
+    anual: 0,
+  });
+  const [fechaInicio, setFechaInicio] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [fechaFin, setFechaFin] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
   const cargarDatos = async () => {
     const data = await obtenerMovimientosHabitaciones(fechaInicio, fechaFin);
-    setDatos(data || []);
+
+   const movimientosLimpios = data.movimientos.filter(m => {
+    const fechaSolo = m.fecha.split('T')[0];
+    return fechaSolo >= fechaInicio && fechaSolo <= fechaFin;
+  });
+
+  setDatos(movimientosLimpios);
+  setTotales({
+    gastos: data.totalGastos,
+    ingresosExtra: data.totalIngresosExtra,
+    mensual: data.totalMensual,
+    anual: data.totalAnual
+  });
   };
 
   useEffect(() => {
     cargarDatos();
   }, [fechaInicio, fechaFin]);
-
-  const total = datos.reduce((sum, d) => sum + parseFloat(d.monto_total || 0), 0);
-
-  const generarPDF = () => {
-    const doc = new jsPDF();
-    
-    // Título y encabezado del reporte
-    doc.setFontSize(18);
-    doc.text("Reporte de Ingresos por Habitaciones", 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Periodo: ${fechaInicio} al ${fechaFin}`, 14, 22);
-
-    // Generar tabla en el PDF
-    autoTable(doc, {
-      startY: 30,
-      head: [['Fecha', 'Recepcionista', 'Huesped', 'Hab.', 'Efectivo', 'QR', 'Total']],
-      body: datos.map(d => [
-        new Date(d.fecha).toLocaleDateString(),
-        d.usuarios?.nombre || 'Desconocido',
-        d.huesped_referencia || '-',
-        `Hab. ${d.nro_habitacion}`,
-        `${parseFloat(d.monto_efectivo || 0).toFixed(2)} Bs.`,
-        `${parseFloat(d.monto_qr || 0).toFixed(2)} Bs.`,
-        `${parseFloat(d.monto_total || 0).toFixed(2)} Bs.`
-      ]),
-    });
-
-    // Añadir el total al final de la tabla
-    const finalY = (doc as any).lastAutoTable.finalY || 30;
-    doc.text(`Total Recaudado en el periodo: ${total.toFixed(2)} Bs.`, 14, finalY + 10);
-
-    // Abrir vista previa en nueva pestaña
-    const pdfBlob = doc.output('bloburl');
-    window.open(pdfBlob, '_blank');
-  };
+const datosVisibles = datos.filter((d) => {
+    const fechaRegistro = d.fecha.split("T")[0];
+    return fechaRegistro >= fechaInicio && fechaRegistro <= fechaFin;
+  });
+ const totalHabitaciones = datosVisibles.reduce(
+    (sum, d) => sum + parseFloat(d.monto_total || 0),
+    0
+  );
+  const balanceNeto =
+    totalHabitaciones + totales.ingresosExtra - totales.gastos;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-8">
-      <header className="flex justify-between items-center">
-        <h2 className="text-3xl font-black text-blue-900 uppercase tracking-tighter">Ingresos por Habitaciones</h2>
-        <button 
-          onClick={generarPDF}
-          className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-sm uppercase hover:bg-emerald-700 transition-all shadow-lg"
+      <header className="flex justify-between items-center no-print">
+        <h2 className="text-3xl font-black text-blue-900 uppercase tracking-tighter">
+          Ingresos Habitaciones
+        </h2>
+        <button
+          onClick={() => window.print()}
+          className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-sm uppercase hover:bg-emerald-700"
         >
           PDF / IMPRIMIR
         </button>
       </header>
 
-      <div className="flex gap-4 bg-white p-6 rounded-3xl border shadow-sm">
-        <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="p-2 border rounded-xl" />
-        <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="p-2 border rounded-xl" />
+      {/* FILA SUPERIOR: Filtros y Resumen Anual/Mensual */}
+      <div className="flex flex-col lg:flex-row gap-6 items-end no-print">
+        <div className="bg-white p-6 rounded-3xl border shadow-sm flex flex-col gap-2 w-full lg:w-1/3">
+          <label className="text-[10px] font-black uppercase text-slate-400">
+            Rango de fechas
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="w-full p-2 border rounded-xl"
+            />
+            <input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="w-full p-2 border rounded-xl"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 w-full lg:w-2/3">
+          <div className="bg-slate-800 p-6 rounded-3xl text-white">
+            <p className="text-slate-400 text-[10px] font-black uppercase">
+              Total Mensual
+            </p>
+            <h2 className="text-2xl font-black">
+              Bs {totales.mensual.toFixed(2)}
+            </h2>
+          </div>
+          <div className="bg-slate-600 p-6 rounded-3xl text-white">
+            <p className="text-slate-300 text-[10px] font-black uppercase">
+              Total Anual
+            </p>
+            <h2 className="text-2xl font-black">
+              Bs {totales.anual.toFixed(2)}
+            </h2>
+          </div>
+        </div>
       </div>
 
-      <div className="bg-blue-600 p-8 rounded-3xl text-white">
-        <p className="text-blue-200 text-xs font-black uppercase">Total Recaudado en Habitaciones</p>
-        <h2 className="text-4xl font-black">Bs {total.toFixed(2)}</h2>
+      {/* Tarjetas principales de Ingresos/Egresos */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 no-print">
+        <div className="bg-blue-600 p-8 rounded-3xl text-white">
+          <p className="text-blue-200 text-xs font-black uppercase">
+            Ingresos Habitaciones
+          </p>
+          <h2 className="text-3xl font-black">
+            Bs {totalHabitaciones.toFixed(2)}
+          </h2>
+        </div>
+        <div className="bg-emerald-600 p-8 rounded-3xl text-white">
+          <p className="text-emerald-200 text-xs font-black uppercase">
+            Ingresos Extra
+          </p>
+          <h2 className="text-3xl font-black">
+            Bs {totales.ingresosExtra.toFixed(2)}
+          </h2>
+        </div>
+        <div className="bg-rose-600 p-8 rounded-3xl text-white">
+          <p className="text-rose-200 text-xs font-black uppercase">
+            Total Egresos
+          </p>
+          <h2 className="text-3xl font-black">
+            Bs {totales.gastos.toFixed(2)}
+          </h2>
+        </div>
       </div>
 
-      <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="border-b uppercase text-[10px] text-slate-400">
-            <tr>
-              <th className="p-4 text-right">Fecha</th>
-              <th className="p-4 text-left">Recepcionistas</th>
-              <th className="p-4 text-left">Huesped</th>
-              <th className="p-4 text-right">Habitación</th>
-              <th className="p-4 text-right">Monto efectivo</th>
-              <th className="p-4 text-right">Monto qr</th>
-              <th className="p-4 text-right">Monto total</th>
-              <th className="p-4 text-left">Observaciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {datos.map((d) => (
-              <tr key={d.id} className="border-b hover:bg-slate-50">
-                 <td className="p-4 text-xs font-medium text-slate-500 whitespace-nowrap">
-                        <span className="block font-bold text-slate-700">
-                          {new Date(d.fecha).toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(d.fecha).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </td>
-                <td className="p-4 font-black">{d.usuarios?.nombre || 'Desconocido'}</td>
-                <td className="p-4 font-black">{d.huesped_referencia}</td>
-                <td className="p-4 font-bold text-slate-600">Hab. {d.nro_habitacion}</td>
-                <td className="p-4 text-right font-black text-blue-600">{parseFloat(d.monto_efectivo || 0).toFixed(2)}Bs.
-                </td>
-                <td className="p-4 text-right font-black text-blue-600">{parseFloat(d.monto_qr || 0).toFixed(2)}Bs.
-                </td>
-                <td className="p-4 text-right font-black text-green-600">+{parseFloat(d.monto_total || 0).toFixed(2)}Bs.
-                </td>
-                <td className="py-3 text-slate-700">{d.observaciones}</td>
+      {/* Área de Impresión */}
+      <div className="printable-area">
+        <div className="hidden print:block mb-8 text-center">
+          <h1 className="text-4xl font-black uppercase text-blue-900">
+            Reporte de Ingresos por Habitaciones
+          </h1>
+          <p className="font-bold text-slate-500">
+            Periodo: {fechaInicio} al {fechaFin}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="border-b uppercase text-[10px] text-slate-400">
+              <tr>
+                <th className="p-4 text-right">Fecha</th>
+                <th className="p-4 text-left">Recepcionista</th>
+                <th className="p-4 text-left">Huesped</th>
+                <th className="p-4 text-right">Habitación</th>
+                <th className="p-4 text-right">Efectivo</th>
+                <th className="p-4 text-right">QR</th>
+                <th className="p-4 text-right">Total</th>
+                <th className="p-4 text-left">Observaciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {datosVisibles.map((d) => (
+                <tr key={d.id} className="border-b hover:bg-slate-50">
+                  <td className="p-4 text-xs font-medium text-slate-500">
+                    <span className="block font-bold text-slate-700">
+                      {d.fecha.split("T")[0].split("-").reverse().join("/")}
+                    </span>
+                  </td>
+                  <td className="p-4 font-black">
+                    {d.usuarios?.nombre || "Desconocido"}
+                  </td>
+                  <td className="p-4 font-black">{d.huesped_referencia}</td>
+                  <td className="p-4 font-bold text-slate-600 text-right">
+                    Hab. {d.nro_habitacion}
+                  </td>
+                  <td className="p-4 text-right font-black text-blue-600">
+                    {parseFloat(d.monto_efectivo || 0).toFixed(2)}
+                  </td>
+                  <td className="p-4 text-right font-black text-blue-600">
+                    {parseFloat(d.monto_qr || 0).toFixed(2)}
+                  </td>
+                  <td className="p-4 text-right font-black text-green-600">
+                    +{parseFloat(d.monto_total || 0).toFixed(2)}
+                  </td>
+                  <td className="p-4 text-slate-700">{d.observaciones}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="hidden print:block mt-8 text-right">
+          <div className="inline-block p-4 bg-slate-100 rounded-2xl border">
+            <p className="text-xs font-black uppercase text-slate-500">
+              TOTAL RECAUDADO
+            </p>
+            <h2 className="text-2xl font-black text-slate-900">
+              {balanceNeto.toFixed(2)} Bs.
+            </h2>
+          </div>
+        </div>
       </div>
     </div>
   );
