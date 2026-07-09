@@ -21,30 +21,30 @@ export function GestionIngresosHabitaciones() {
   const cargarDatos = async () => {
     const data = await obtenerMovimientosHabitaciones(fechaInicio, fechaFin);
 
-   const movimientosLimpios = data.movimientos.filter(m => {
-    const fechaSolo = m.fecha.split('T')[0];
-    return fechaSolo >= fechaInicio && fechaSolo <= fechaFin;
-  });
+    const movimientosLimpios = data.movimientos.filter((m) => {
+      const fechaSolo = m.fecha.split("T")[0];
+      return fechaSolo >= fechaInicio && fechaSolo <= fechaFin;
+    });
 
-  setDatos(movimientosLimpios);
-  setTotales({
-    gastos: data.totalGastos,
-    ingresosExtra: data.totalIngresosExtra,
-    mensual: data.totalMensual,
-    anual: data.totalAnual
-  });
+    setDatos(movimientosLimpios);
+    setTotales({
+      gastos: data.totalGastos,
+      ingresosExtra: data.totalIngresosExtra,
+      mensual: data.totalMensual,
+      anual: data.totalAnual,
+    });
   };
 
   useEffect(() => {
     cargarDatos();
   }, [fechaInicio, fechaFin]);
-const datosVisibles = datos.filter((d) => {
+  const datosVisibles = datos.filter((d) => {
     const fechaRegistro = d.fecha.split("T")[0];
     return fechaRegistro >= fechaInicio && fechaRegistro <= fechaFin;
   });
- const totalHabitaciones = datosVisibles.reduce(
+  const totalHabitaciones = datosVisibles.reduce(
     (sum, d) => sum + parseFloat(d.monto_total || 0),
-    0
+    0,
   );
   const balanceNeto =
     totalHabitaciones + totales.ingresosExtra - totales.gastos;
@@ -135,14 +135,40 @@ const datosVisibles = datos.filter((d) => {
 
       {/* Área de Impresión */}
       <div className="printable-area">
-        <div className="hidden print:block mb-8 text-center">
-          <h1 className="text-4xl font-black uppercase text-blue-900">
-            Reporte de Ingresos por Habitaciones
-          </h1>
-          <p className="font-bold text-slate-500">
-            Periodo: {fechaInicio} al {fechaFin}
-          </p>
-        </div>
+        <div className="hidden print:block mb-8">
+    {/* Encabezado del reporte */}
+    <div className="text-center mb-8">
+      <h1 className="text-3xl font-black uppercase text-blue-900">
+        Reporte de Ingresos por Habitaciones
+      </h1>
+      <p className="font-bold text-slate-500 text-sm">
+        Periodo: {fechaInicio.split('-').reverse().join('/')} al {fechaFin.split('-').reverse().join('/')}
+      </p>
+    </div>
+
+    {/* Grid de 4 tarjetas para los datos */}
+    <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center">
+        <p className="text-[9px] font-black uppercase text-slate-400">Habitaciones</p>
+        <h2 className="text-lg font-black text-slate-700">{totalHabitaciones.toFixed(2)} Bs</h2>
+      </div>
+
+      <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-center">
+        <p className="text-[9px] font-black uppercase text-emerald-600">Ingresos Extra</p>
+        <h2 className="text-lg font-black text-emerald-800">{totales.ingresosExtra.toFixed(2)} Bs</h2>
+      </div>
+
+      <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200 text-center">
+        <p className="text-[9px] font-black uppercase text-rose-600">Total Egresos</p>
+        <h2 className="text-lg font-black text-rose-800">{totales.gastos.toFixed(2)} Bs</h2>
+      </div>
+
+      <div className="p-4 bg-blue-50 rounded-2xl border-2 border-blue-500 text-center">
+        <p className="text-[9px] font-black uppercase text-blue-700">Recaudado Final</p>
+        <h2 className="text-lg font-black text-blue-900">{balanceNeto.toFixed(2)} Bs</h2>
+      </div>
+    </div>
+  </div>
 
         <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
           <table className="w-full text-left">
@@ -187,17 +213,6 @@ const datosVisibles = datos.filter((d) => {
               ))}
             </tbody>
           </table>
-        </div>
-
-        <div className="hidden print:block mt-8 text-right">
-          <div className="inline-block p-4 bg-slate-100 rounded-2xl border">
-            <p className="text-xs font-black uppercase text-slate-500">
-              TOTAL RECAUDADO
-            </p>
-            <h2 className="text-2xl font-black text-slate-900">
-              {balanceNeto.toFixed(2)} Bs.
-            </h2>
-          </div>
         </div>
       </div>
     </div>

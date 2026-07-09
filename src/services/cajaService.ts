@@ -1,24 +1,26 @@
 import { supabase } from '@/lib/supabase';
 
 export const obtenerMovimientosHabitaciones = async (inicio: string, fin: string) => {
-  const fechaFinDate = new Date(fin);
-  fechaFinDate.setUTCHours(23, 59, 59, 999);
-  const inicioISO = `${inicio}T00:00:00`; 
+  // 1. Usar formato YYYY-MM-DD simple para evitar desfases de zona horaria
+  const inicioISO = `${inicio}T00:00:00`;
   const finISO = `${fin}T23:59:59`;
 
-  // Fechas para cálculos independientes de calendario
   const fechaActual = new Date();
-  const primerDiaMes = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1).toISOString();
-  const primerDiaAnio = new Date(fechaActual.getFullYear(), 0, 1).toISOString();
+  // Formato: 2026-07-01
+  const primerDiaMes = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}-01`;
+  // Formato: 2026-01-01
+  const primerDiaAnio = `${fechaActual.getFullYear()}-01-01`;
 
-  // Ejecutamos las 5 consultas en paralelo
   const [resMov, resGastos, resIngresos, resMensual, resAnual] = await Promise.all([
     supabase.from('caja_movimientos').select('*, usuarios(nombre)').gte('fecha', inicioISO).lte('fecha', finISO).order('fecha', { ascending: false }),
     supabase.from('gastos').select('monto').gte('fecha', inicioISO).lte('fecha', finISO),
     supabase.from('ingresos_extra').select('monto').gte('fecha', inicioISO).lte('fecha', finISO),
+    // Al enviar el string '2026-07-01', Postgres lo compara correctamente con el inicio del día local
     supabase.from('caja_movimientos').select('monto_total').gte('fecha', primerDiaMes),
     supabase.from('caja_movimientos').select('monto_total').gte('fecha', primerDiaAnio)
-  ]);
+  ]); 
+
+  // ... resto del código igual
 
   if (resMov.error) throw resMov.error;
 
