@@ -20,11 +20,15 @@ export const obtenerRegistrosDelDia = async () => {
         precio_acordado,
         a_cuenta,
         fecha_ingreso,
+            hora_ingreso,
+            fecha_salida,
+            responsable,
+            recepcionista,
         habitaciones (numero)
       ),
       clientes (*)
     `)
-    // EL TRUCO: Al usar !inner en el select, este filtro ahora sí funcionará correctamente
+   
     .gte('hospedajes.fecha_ingreso', `${hoy}T00:00:00`)
     .lte('hospedajes.fecha_ingreso', `${hoy}T23:59:59`);
 

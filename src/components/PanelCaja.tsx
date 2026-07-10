@@ -170,12 +170,7 @@ autoTable(doc, {
             </p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button 
-              onClick={() => setMostrarModalMovimiento(true)}
-              className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white font-black px-5 py-3 rounded-xl text-xs uppercase tracking-widest transition-all"
-            >
-              ➕ Registrar Movimiento
-            </button>
+            
             <button 
               onClick={() => setMostrarModalCierre(true)}
               className="flex-1 sm:flex-initial bg-rose-600 hover:bg-rose-700 text-white font-black px-5 py-3 rounded-xl text-xs uppercase tracking-widest transition-all"
@@ -284,115 +279,6 @@ autoTable(doc, {
           </table>
         </div>
       </div>
-
-      {/* MODAL: REGISTRAR INGRESO / EGRESO MANUAL */}
-      {mostrarModalMovimiento && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100">
-            <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
-              <div>
-                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Administración de Caja</p>
-                <h2 className="text-xl font-black italic uppercase">Nuevo Movimiento Manual</h2>
-              </div>
-              <button onClick={() => setMostrarModalMovimiento(false)} className="text-slate-400 hover:text-white transition-colors text-2xl">×</button>
-            </div>
-            <form className="p-6 space-y-4" onSubmit={async (e) => {
-              e.preventDefault();
-              
-              // Los egresos descuentan todo el dinero inmediatamente, no manejan saldos diferidos
-              const finalMontoACuenta = nuevoMov.tipo === 'egreso' ? nuevoMov.montoTotal : nuevoMov.montoACuenta;
-              const calculatedSaldo = nuevoMov.tipo === 'ingreso' 
-                ? Math.max(0, nuevoMov.montoTotal - nuevoMov.montoACuenta) 
-                : 0;
-
-              const res = await registrarMovimientoManual({
-                tipo_movimiento: nuevoMov.tipo,
-                monto_total: nuevoMov.montoTotal,
-                monto_a_cuenta: finalMontoACuenta,
-                monto_saldo: calculatedSaldo,
-                factura_numero: nuevoMov.facturaNumero,
-                huesped_referencia: nuevoMov.huespedReferencia,
-                nro_habitacion: nuevoMov.idHabitacion,
-                observaciones: nuevoMov.observaciones
-              });
-
-              if (res.success) {
-                setMostrarModalMovimiento(false);
-                setNuevoMov({ tipo: 'ingreso', montoTotal: 0, montoACuenta: 0, facturaNumero: '', huespedReferencia: '', idHabitacion: '', observaciones: '' });
-              }
-            }}>
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  type="button" 
-                  onClick={() => setNuevoMov({ ...nuevoMov, tipo: 'ingreso' })}
-                  className={`py-3 rounded-xl font-black text-xs uppercase border transition-all ${nuevoMov.tipo === 'ingreso' ? 'bg-emerald-50 border-emerald-500 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}
-                >
-                  🟢 Ingreso
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setNuevoMov({ ...nuevoMov, tipo: 'egreso' })}
-                  className={`py-3 rounded-xl font-black text-xs uppercase border transition-all ${nuevoMov.tipo === 'egreso' ? 'bg-rose-50 border-rose-500 text-rose-600' : 'bg-slate-50 text-slate-400'}`}
-                >
-                  🔴 Egreso
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase">Monto Total (Bs.)</label>
-                  <input 
-                    type="number" 
-                    required 
-                    min="1" 
-                    value={nuevoMov.montoTotal || ''} 
-                    onChange={(e) => setNuevoMov({ ...nuevoMov, montoTotal: Number(e.target.value) })} 
-                    className="w-full border-2 border-slate-100 p-3 rounded-xl font-black bg-slate-50" 
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase">A Cuenta Efectivo (Bs.)</label>
-                  <input 
-                    type="number" 
-                    required={nuevoMov.tipo === 'ingreso'} 
-                    min="0" 
-                    value={nuevoMov.tipo === 'egreso' ? nuevoMov.montoTotal : (nuevoMov.montoACuenta || '')} 
-                    disabled={nuevoMov.tipo === 'egreso'} 
-                    onChange={(e) => setNuevoMov({ ...nuevoMov, montoACuenta: Number(e.target.value) })} 
-                    className="w-full border-2 border-slate-100 p-3 rounded-xl font-black bg-slate-50 disabled:opacity-60" 
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase">Nº Recibo / Documento</label>
-                  <input type="text" value={nuevoMov.facturaNumero} onChange={(e) => setNuevoMov({ ...nuevoMov, facturaNumero: e.target.value })} className="w-full border-2 border-slate-100 p-3 rounded-xl font-medium text-xs bg-slate-50" placeholder="Opcional" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase">Nº Habitación</label>
-                  <input type="text" value={nuevoMov.idHabitacion} onChange={(e) => setNuevoMov({ ...nuevoMov, idHabitacion: e.target.value })} className="w-full border-2 border-slate-100 p-3 rounded-xl font-medium text-xs bg-slate-50" placeholder="Ej: 302" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase">Huésped / Detalle del Concepto</label>
-                <input type="text" required value={nuevoMov.huespedReferencia} onChange={(e) => setNuevoMov({ ...nuevoMov, huespedReferencia: e.target.value })} className="w-full border-2 border-slate-100 p-3 rounded-xl font-bold text-xs bg-slate-50" placeholder="Nombre completo del Huésped o Proveedor" />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase">Notas adicionales</label>
-                <textarea rows={2} value={nuevoMov.observaciones} onChange={(e) => setNuevoMov({ ...nuevoMov, observaciones: e.target.value })} className="w-full border-2 border-slate-100 p-3 rounded-xl font-medium text-xs bg-slate-50 outline-none focus:border-blue-500" placeholder="Ej: Pago de insumos de limpieza..." />
-              </div>
-
-              <button type="submit" disabled={cargandoAccion} className="w-full bg-slate-900 text-white font-black py-4 rounded-xl text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">
-                {cargandoAccion ? 'Guardando...' : 'Confirmar Movimiento'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
     {/* MODAL: CIERRE DE CAJA / TURNO */}
 {mostrarModalCierre && (
   <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
@@ -406,34 +292,49 @@ autoTable(doc, {
         e.preventDefault();
 
         // 1. Lógica para generar el PDF de Cierre
-        const doc = new jsPDF();
-        doc.setFontSize(16);
-        doc.text("REPORTE DE CIERRE DE CAJA", 14, 20);
-        doc.setFontSize(10);
-        doc.text(`Fecha de Cierre: ${new Date().toLocaleString()}`, 14, 30);
-        doc.text(`Operador de Cierre: ${usuario?.nombre || 'Recepcionista'}`, 14, 35);
-        doc.text(`Monto Inicial: ${sesionActiva.monto_inicial} Bs.`, 14, 40);
+        const doc = new jsPDF('l', 'mm', 'a4');
+       doc.setFontSize(18);
+doc.text("REPORTE DE CIERRE DE CAJA", 14, 15);
+doc.setFontSize(10);
+doc.text(`Fecha de Cierre: ${new Date().toLocaleString()}`, 14, 22);
+doc.text(`Operador: ${usuario?.nombre || 'Recepcionista'}`, 14, 27);
+doc.text(`Monto Inicial: ${sesionActiva.monto_inicial} Bs.`, 14, 32);
 
-        // Tabla de movimientos actualizada
-        autoTable(doc, {
-          startY: 50,
-          head: [['Fecha', 'Recepcionista', 'Huésped', 'Hab.', 'Monto Hab.', 'Pago']],
-          body: movimientos.map(m => [
-            new Date(m.fecha).toLocaleDateString(),
-            m.usuarios?.nombre || '-', // Nombre de quien registró
-            m.huesped_referencia || m.observaciones || '-',
-            m.nro_habitacion || '-',
-            `${Number(m.monto_total || 0).toFixed(2)} Bs.`, // Monto total habitación
-            `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.` // Pago recibido
-          ]),
-        });
+// Tabla de movimientos ajustada para horizontal
+autoTable(doc, {
+  startY: 40,
+  head: [['Fecha', 'Recepcionista', 'factura', 'Huésped', 'Hab.', 'Precio Hos.', 'Pago', 'Obs.']],
+  body: movimientos.map(m => [
+    new Date(m.fecha).toLocaleDateString(),
+    m.usuarios?.nombre || '-', 
+    m.factura_numero || '-', 
+    m.huesped_referencia || '-',
+    m.nro_habitacion || '-',
+    `${Number(m.monto_total || 0).toFixed(2)} Bs.`, 
+    `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
+    m.observaciones || '-'
+  ]),
+  theme: 'striped',
+  headStyles: { fillColor: [30, 41, 59] },
+  // NUEVO: Ajustes de columnas
+  columnStyles: {
+    7: { cellWidth: 70 }, // La columna 6 (Observaciones) tendrá un ancho fijo
+  },
+  didParseCell: (data) => {
+    // Si es la columna de observaciones (índice 6), forzamos el estilo
+    if (data.column.index === 7) {
+      data.cell.styles.fontSize = 8; // Texto un poco más pequeño para que quepa mejor
+    }
+  }
+});
+// Totales finales posicionados a la derecha (gracias a la hoja horizontal)
+const finalY = (doc as any).lastAutoTable.finalY + 10;
+doc.setFontSize(12);
+doc.text(`Total Efectivo Teórico: ${saldoEnCajaTeorico.toFixed(2)} Bs.`, 14, finalY);
+doc.text(`Efectivo Real (Reportado): ${montoCierreReal.toFixed(2)} Bs.`, 14, finalY + 10);
+doc.text(`Diferencia: ${(montoCierreReal - saldoEnCajaTeorico).toFixed(2)} Bs.`, 14, finalY + 20);
 
-        // Totales finales
-        const finalY = (doc as any).lastAutoTable.finalY + 10;
-        doc.text(`Efectivo Teórico: ${saldoEnCajaTeorico.toFixed(2)} Bs.`, 14, finalY);
-        doc.text(`Efectivo Real (Reportado): ${montoCierreReal.toFixed(2)} Bs.`, 14, finalY + 7);
-        
-        doc.save(`cierre_caja_${new Date().getTime()}.pdf`);
+doc.save(`cierre_caja_${new Date().getTime()}.pdf`);
 
         // 2. Ejecutar cierre en Base de Datos
         const res = await cerrarCaja(montoCierreReal);

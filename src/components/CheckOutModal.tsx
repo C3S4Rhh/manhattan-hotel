@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useCheckOut } from "@/hook/useCheckOut";
 import { HuespedItem } from "./HuespedItem";
 import { CambioHabitacionModal } from "./CambioHabitacionModal";
+import { GuestForm } from "./GuestForm";
 
 export function CheckOutModal({
   hab,
@@ -14,10 +15,14 @@ export function CheckOutModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const [huespedesAdicionales, setHuespedesAdicionales] = useState<any[]>([]);
   const [datosHospedaje, setDatosHospedaje] = useState<any>(null);
   const [pagoEfectivo, setPagoEfectivo] = useState(0);
   const [pagoQR, setPagoQR] = useState(0);
   const [abiertoCambio, setAbiertoCambio] = useState(false);
+  const [cargandoRegistro, setCargandoRegistro] = useState(false);
+  const [tiempoRestante, setTiempoRestante] = useState<string>("");
+  const [estaAtrasado, setEstaAtrasado] = useState<boolean>(false);
   const {
     registro,
     huespedesDetalle,
@@ -33,6 +38,57 @@ export function CheckOutModal({
     realizarSalidaTotal,
     registrarPagoParcial,
   } = useCheckOut(hab, onSuccess);
+
+  useEffect(() => {
+    const calcularTiempo = () => {
+      if (!registro?.fecha_ingreso) return;
+
+      const fechaIngreso = new Date(registro.fecha_ingreso);
+      const horaIngreso = fechaIngreso.getHours();
+
+      // Cálculo base de salida
+      const fechaSalida = new Date(fechaIngreso);
+      fechaSalida.setHours(13, 0, 0, 0);
+
+      if (horaIngreso >= 13) {
+        fechaSalida.setDate(fechaSalida.getDate() + 1);
+      }
+
+      const milisegundosExtra = diasExtra * 24 * 60 * 60 * 1000;
+      fechaSalida.setTime(fechaSalida.getTime() + milisegundosExtra);
+
+      const ahora = new Date();
+      const diferencia = fechaSalida.getTime() - ahora.getTime();
+
+      if (diferencia <= 0) {
+        // El cliente se pasó de hora
+        setEstaAtrasado(true);
+        const excedido = Math.abs(diferencia);
+        const horas = Math.floor(excedido / (1000 * 60 * 60));
+        const minutos = Math.floor((excedido % (1000 * 60 * 60)) / (1000 * 60));
+        setTiempoRestante(
+          `+${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}`,
+        );
+      } else {
+        // El cliente aún tiene tiempo
+        setEstaAtrasado(false);
+        const horas = Math.floor(diferencia / (1000 * 60 * 60));
+        const minutos = Math.floor(
+          (diferencia % (1000 * 60 * 60)) / (1000 * 60),
+        );
+        const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+        setTiempoRestante(
+          `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`,
+        );
+      }
+    };
+
+    const timer = setInterval(calcularTiempo, 1000);
+    return () => clearInterval(timer);
+  }, [registro?.fecha_ingreso, diasExtra]);
+
+  //fin cronometro
+
   useEffect(() => {
     const guardarAjustes = async () => {
       if (!registro?.id) return;
@@ -49,12 +105,90 @@ export function CheckOutModal({
     const timer = setTimeout(guardarAjustes, 500);
     return () => clearTimeout(timer);
   }, [diasExtra, descuentoMonto, registro?.id]);
+
   useEffect(() => {
     if (registro) {
       setDatosHospedaje(registro);
     }
   }, [registro]);
+
   if (cargando) return null;
+
+  const agregarFicha = () => {
+    setHuespedesAdicionales([
+      ...huespedesAdicionales,
+      { nombre: "", documento: "", celular: "", profesion: "" },
+    ]);
+  };
+
+  const actualizarHuespedAdicional = (
+    index: number,
+    campo: string,
+    valor: string,
+  ) => {
+    const nuevos = [...huespedesAdicionales];
+    nuevos[index][campo] = valor;
+    setHuespedesAdicionales(nuevos);
+  };
+
+  const guardarHuespedesAdicionales = async () => {
+    if (huespedesAdicionales.length === 0) return;
+    setCargandoRegistro(true);
+
+    try {
+      for (const h of huespedesAdicionales) {
+        const { data: clienteExistente } = await supabase
+          .from("clientes")
+          .select("id")
+          .eq("documento", h.documento)
+          .maybeSingle();
+
+        let clienteId;
+
+        if (clienteExistente) {
+          clienteId = clienteExistente.id;
+        } else {
+          const { data: nuevoCliente, error: errorCliente } = await supabase
+            .from("clientes")
+            .insert({
+              nombre: h.nombre,
+              documento: h.documento,
+              profesion: h.profesion || null,
+              nacionalidad: h.nacionalidad || null,
+              celular: h.celular || null,
+              fecha_nacimiento: h.fecha_nacimiento || null,
+              estado_civil: h.estado_civil || null,
+            })
+            .select()
+            .single();
+
+          if (errorCliente) throw errorCliente;
+          clienteId = nuevoCliente.id;
+        }
+
+        const { error: errorDetalle } = await supabase
+          .from("detalle_hospedaje_huespedes")
+          .insert({
+            id_hospedaje: registro.id,
+            id_cliente: clienteId,
+            estado: "activo",
+          });
+
+        if (errorDetalle) throw errorDetalle;
+      }
+
+      alert("Huéspedes registrados correctamente.");
+      setHuespedesAdicionales([]);
+      onSuccess();
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      alert("Hubo un error al guardar los datos.");
+    } finally {
+      setCargandoRegistro(false);
+    }
+  };
+
+  // Agrega esto dentro de tu componente CheckOutModal
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -64,7 +198,6 @@ export function CheckOutModal({
             Gestión de Salida
           </p>
           <h2 className="text-3xl font-black italic">HAB. #{hab.numero}</h2>
-          {/* Botón para abrir el modal */}
           <button
             onClick={() => setAbiertoCambio(true)}
             className="text-[12px] font-bold text-white/80 underline mt-2 hover:text-white"
@@ -74,15 +207,21 @@ export function CheckOutModal({
         </div>
 
         <div className="p-8 space-y-6 overflow-y-auto">
-          {/* Listado de Huéspedes */}
-          <div className="bg-blue-50 p-1 rounded-xl border border-blue-100 text-center">
-            <p className="text-[9px] font-black text-blue-400 uppercase">
-              Días contratados
+          <div
+            className={`p-3 rounded-xl border text-center ${estaAtrasado ? "bg-red-50 border-red-200" : "bg-slate-900 border-slate-700"}`}
+          >
+            <p
+              className={`text-[9px] font-black uppercase tracking-widest ${estaAtrasado ? "text-red-500" : "text-blue-400"}`}
+            >
+              {estaAtrasado ? "Tiempo excedido" : "Tiempo para Salida "}
             </p>
-            <p className="text-sm font-black text-blue-700">
-              {registro?.cantidad_dias || 0} Días
+            <p
+              className={`text-2xl font-black font-mono mt-1 ${estaAtrasado ? "text-red-600" : "text-white"}`}
+            >
+              {tiempoRestante}
             </p>
           </div>
+
           <div className="space-y-3">
             <p className="text-[10px] font-black text-slate-400 uppercase ml-1">
               Huéspedes en habitación
@@ -91,14 +230,47 @@ export function CheckOutModal({
               <HuespedItem
                 key={item.id}
                 item={item}
-                // Usamos el objeto 'registro' que viene de tu hook useCheckOut
                 fechaIngreso={registro?.fecha_ingreso}
                 onRetirar={retirarHuesped}
               />
             ))}
           </div>
 
-          {/* Sección de Ajustes Manuales para los dias de 0  para arriba = onChange={(e) => setDiasExtra(Math.max(0, parseInt(e.target.value) || 0))}*/}
+          {/* Sección de huéspedes adicionales */}
+          <div className="space-y-4 border-t border-slate-100 pt-4">
+            <p className="text-[10px] font-black text-slate-400 uppercase text-center">
+              Huéspedes adicionales
+            </p>
+            {huespedesAdicionales.map((h, i) => (
+              <GuestForm
+                key={i}
+                index={i}
+                huesped={h}
+                onChange={actualizarHuespedAdicional}
+                onAutoCompletar={() => {}}
+              />
+            ))}
+            {huespedesAdicionales.length > 0 && (
+              <button
+                type="button"
+                onClick={guardarHuespedesAdicionales}
+                disabled={cargandoRegistro}
+                className={`w-full mt-4 bg-emerald-600 text-white font-black py-3 rounded-xl hover:bg-emerald-700 transition-all uppercase text-xs tracking-widest shadow-lg ${cargandoRegistro ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {cargandoRegistro
+                  ? "Registrando..."
+                  : "Registrar Huéspedes en Sistema"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={agregarFicha}
+              className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-[10px] font-black text-slate-400 uppercase hover:border-blue-400 hover:text-blue-400 transition-all"
+            >
+              + Agregar ficha de huésped
+            </button>
+          </div>
+
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div>
@@ -129,11 +301,8 @@ export function CheckOutModal({
                 />
               </div>
             </div>
-
-            {/* BOTONES DE CARGA RÁPIDA */}
           </div>
 
-          {/* Información Financiera */}
           <div className="bg-slate-900 p-4 rounded-2xl space-y-2 text-white">
             <div className="flex justify-between items-center border-b border-slate-700 pb-2">
               <span className="text-[10px] font-bold uppercase opacity-60">
@@ -153,8 +322,6 @@ export function CheckOutModal({
             </div>
           </div>
 
-          {/* Input de Pago */}
-
           <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl flex justify-between items-center">
             <span className="text-[10px] font-black text-amber-700 uppercase">
               Saldo tras este pago:
@@ -165,6 +332,7 @@ export function CheckOutModal({
               Bs. {(saldoFinal - (pagoEfectivo + pagoQR)).toFixed(2)}
             </span>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[9px] font-black uppercase text-emerald-600">
@@ -192,7 +360,7 @@ export function CheckOutModal({
 
           <button
             onClick={() => registrarPagoParcial(pagoEfectivo, pagoQR)}
-            className="bg-blue-600 text-white font-black py-3 rounded-lg"
+            className="bg-blue-600 text-white font-black py-3 rounded-lg w-full"
           >
             Registrar Pago (Abono)
           </button>
@@ -200,9 +368,9 @@ export function CheckOutModal({
           <div className="grid gap-3 pt-2">
             <button
               onClick={realizarSalidaTotal}
-              disabled={!saldoLiquidado || procesando}
+              disabled={saldoFinal - (pagoEfectivo + pagoQR) > 0 || procesando}
               className={`font-black py-4 rounded-2xl shadow-lg transition-all uppercase text-xs tracking-widest ${
-                saldoLiquidado
+                saldoFinal - (pagoEfectivo + pagoQR) <= 0
                   ? "bg-emerald-600 text-white hover:scale-[1.02]"
                   : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }`}

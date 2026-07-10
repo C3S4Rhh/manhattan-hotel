@@ -168,7 +168,7 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
           monto_total: pagoFinal,
           monto_a_cuenta: pagoFinal,
           huesped_referencia: registro.detalle_hospedaje_huespedes?.[0]?.clientes?.nombre || 'Checkout Hab. ' + hab.numero,
-          observaciones: `Checkout. Extra: ${diasExtra} medios días. Desc: ${descuentoMonto}%`
+          observaciones: `Checkout. Extra: ${diasExtra} día(s). Desc: ${descuentoMonto}%`
         }]);
       }
 

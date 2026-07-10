@@ -66,7 +66,7 @@ export function ListaClientesActivos() {
           <div className="hidden md:flex flex-col gap-2 min-w-[140px]">
             <div className="flex items-center gap-2">
               <div className="w-6 h-5 bg-indigo-100 rounded flex items-center justify-center text-[10px] font-bold text-indigo-600">
-                ID
+                C.I.
               </div>
               <span className="text-xs font-bold text-slate-700">
                 {h.clientes?.documento || "---"}
