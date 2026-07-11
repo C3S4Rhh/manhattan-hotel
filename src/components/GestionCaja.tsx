@@ -12,6 +12,7 @@ export function GestionCaja({ usuario, onClose }: any) {
   const [mostrarModalCierre, setMostrarModalCierre] = useState(false);
   const [mostrarGasto, setMostrarGasto] = useState(false);
   const [montoCierre, setMontoCierre] = useState("");
+  const [ingresosExtra, setIngresosExtra] = useState<any[]>([]);
 
   useEffect(() => {
     cargarDatos();
@@ -26,71 +27,98 @@ export function GestionCaja({ usuario, onClose }: any) {
       .maybeSingle();
     if (caja) {
       setCajaActiva(caja);
-      const { data: movs } = await supabase
-        .from("caja_movimientos")
-        .select("*")
-        .eq("id_usuario", usuario.id)
-        .gte("fecha", caja.fecha_apertura);
-      const { data: gts } = await supabase
-        .from("gastos")
-        .select("*")
-        .eq("id_usuario", usuario.id)
-        .gte("fecha", caja.fecha_apertura);
-      setMovimientos(movs || []);
-      setGastos(gts || []);
+      const fechaApertura = caja.fecha_apertura;
+
+      const [movs, gts, extras] = await Promise.all([
+        supabase
+          .from("caja_movimientos")
+          .select("*")
+          .eq("id_usuario", usuario.id)
+          .gte("fecha", fechaApertura),
+        supabase
+          .from("gastos")
+          .select("*")
+          .eq("id_usuario", usuario.id)
+          .gte("fecha", fechaApertura),
+        // Cambia esto en tu promesa de cargarDatos:
+        supabase
+          .from("ingresos_extra")
+          .select("*")
+          .eq("usuario_id", usuario.id)
+          .gte("fecha", fechaApertura),
+      ]);
+
+      setMovimientos(movs.data || []);
+      setGastos(gts.data || []);
+      setIngresosExtra(extras.data || []);
     }
   };
 
   const abrirCaja = async () => {
-  if (!montoInicial || parseFloat(montoInicial) < 0) {
-    return alert("Ingrese un monto inicial válido");
-  }
+    if (!montoInicial || parseFloat(montoInicial) < 0) {
+      return alert("Ingrese un monto inicial válido");
+    }
 
-  const { error } = await supabase.from("cajas").insert([{
-    usuario_id: usuario.id,
-    monto_apertura: parseFloat(montoInicial),
-    estado: "abierta",
-    fecha_apertura: new Date().toISOString()
-  }]);
+    const { error } = await supabase.from("cajas").insert([
+      {
+        usuario_id: usuario.id,
+        monto_apertura: parseFloat(montoInicial),
+        estado: "abierta",
+        fecha_apertura: new Date().toISOString(),
+      },
+    ]);
 
-  if (error) {
-    console.error("Error al abrir caja:", error);
-    alert("No se pudo abrir la caja.");
-  } else {
-    cargarDatos(); // Refresca los datos para que aparezca la interfaz de caja activa
-  }
-};
+    if (error) {
+      console.error("Error al abrir caja:", error);
+      alert("No se pudo abrir la caja.");
+    } else {
+      cargarDatos(); // Refresca los datos para que aparezca la interfaz de caja activa
+    }
+  };
   const cerrarCaja = async () => {
-  if (!cajaActiva) return;
-  
-  const montoFinal = parseFloat(montoCierre);
-  if (isNaN(montoFinal)) {
-    return alert("Ingrese un monto real contado.");
-  }
+    if (!cajaActiva) return;
 
-  const { error } = await supabase.from("cajas").update({ 
-    estado: "cerrada", 
-    monto_cierre: montoFinal, 
-    fecha_cierre: new Date().toISOString() 
-  }).eq("id", cajaActiva.id);
-  
-  if (error) {
-    console.error("Error al cerrar caja:", error);
-    alert("No se pudo cerrar la caja.");
-  } else {
-    alert("Caja cerrada exitosamente.");
-    setMostrarModalCierre(false);
-    cargarDatos(); // Esto hará que el componente detecte que ya no hay caja abierta
-  }
-};
+    const montoFinal = parseFloat(montoCierre);
+    if (isNaN(montoFinal)) {
+      return alert("Ingrese un monto real contado.");
+    }
+
+    const { error } = await supabase
+      .from("cajas")
+      .update({
+        estado: "cerrada",
+        monto_cierre: montoFinal,
+        fecha_cierre: new Date().toISOString(),
+      })
+      .eq("id", cajaActiva.id);
+
+    if (error) {
+      console.error("Error al cerrar caja:", error);
+      alert("No se pudo cerrar la caja.");
+    } else {
+      alert("Caja cerrada exitosamente.");
+      setMostrarModalCierre(false);
+      cargarDatos(); // Esto hará que el componente detecte que ya no hay caja abierta
+    }
+  };
 
   const totalIngresos = movimientos.reduce(
     (acc, m) => acc + (Number(m.monto_a_cuenta) || 0),
     0,
   );
-  const totalGastos = gastos.reduce((acc, g) => acc + Number(g.monto), 0);
+  const totalIngresosExtra = ingresosExtra.reduce(
+    (acc, i) => acc + Math.abs(Number(i.monto) || 0),
+    0,
+  );
+  const totalGastos = gastos.reduce(
+    (acc, g) => acc + Math.abs(Number(g.monto) || 0),
+    0,
+  );
   const totalEnCaja =
-    Number(cajaActiva?.monto_apertura || 0) + totalIngresos - totalGastos;
+    Number(cajaActiva?.monto_apertura || 0) +
+    totalIngresos +
+    totalIngresosExtra -
+    totalGastos;
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
@@ -138,9 +166,11 @@ export function GestionCaja({ usuario, onClose }: any) {
                       usuario,
                       movimientos,
                       gastos,
-                      totalIngresos,
-                      totalGastos,
-                      totalEnCaja,
+                     ingresosExtra, 
+                     Number(cajaActiva.monto_apertura),
+      totalIngresos, // 5to argumento
+      totalGastos,   // 6to argumento
+      totalEnCaja
                     )
                   }
                   className="bg-emerald-800 text-white px-4 py-3 rounded-xl font-black uppercase text-[10px]"
@@ -276,6 +306,37 @@ export function GestionCaja({ usuario, onClose }: any) {
                     </p>
                     <p className="font-black text-red-600 text-right">
                       -{Number(g.monto).toFixed(2)}Bs.
+                    </p>
+                  </div>
+                ))}
+                {/* Reemplaza tu bloque actual de ingresosExtra.map con este: */}
+                {ingresosExtra.map((i) => (
+                  <div
+                    key={i.id}
+                    className="grid grid-cols-5 gap-4 items-center p-4 bg-emerald-50 rounded-2xl border border-emerald-100"
+                  >
+                    <p className="font-bold text-slate-800 uppercase text-xs">
+                      Extra: {i.descripcion}
+                    </p>
+                    <p className="font-bold text-emerald-400 uppercase text-xs">
+                      {i.categoria}
+                    </p>
+
+                    {/* Columna Efectivo: Muestra el monto solo si el tipo_pago es 'efectivo' */}
+                    <p className="font-bold text-slate-800 text-right">
+                      {i.tipo_pago === "efectivo"
+                        ? Number(i.monto).toFixed(2)
+                        : "-"}
+                    </p>
+
+                    {/* Columna QR: Muestra el monto solo si el tipo_pago es 'qr' */}
+                    <p className="font-bold text-slate-400 text-right">
+                      {i.tipo_pago === "qr" ? Number(i.monto).toFixed(2) : "-"}
+                    </p>
+
+                    {/* Total del ingreso (siempre positivo) */}
+                    <p className="font-black text-emerald-600 text-right">
+                      +{Number(i.monto).toFixed(2)}Bs.
                     </p>
                   </div>
                 ))}

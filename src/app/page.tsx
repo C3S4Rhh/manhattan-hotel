@@ -236,6 +236,7 @@ export default function Home() {
         {vista === "ingresos" && (
           <div className="p-8">
             <button
+            
               onClick={() => setVista("finanzas")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors mb-4"
             >
@@ -243,7 +244,7 @@ export default function Home() {
             </button>
 
             {/* Usamos el componente consolidado que ya tiene filtros y lógica de impresión */}
-            <GestionIngresos />
+            <GestionIngresos   usuario={usuarioActivo} />
           </div>
         )}
         {vista === "ingresoshabitaciones" && (

@@ -58,6 +58,7 @@ export function RegistroGasto({ onExito }: { onExito: () => void }) {
           <option value="Mantenimiento">Mantenimiento</option>
           <option value="Nómina">Nómina</option>
           <option value="Administrativo">Administrativo</option>
+          <option value="otros">otros</option>
         </select>
         
         <input 

@@ -17,7 +17,7 @@ const calcularEdad = (fechaNacimiento: string): string => {
 export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
   return (
     <div className="bg-slate-50 p-4 md:p-8 rounded-3xl shadow-inner min-h-screen">
-      <div className="max-w-7xl mx-auto bg-white rounded-[2rem] shadow-2xl overflow-hidden">
+      <div className="max-w-12xl mx-auto bg-white rounded-[2rem] shadow-2xl overflow-hidden">
         {/* Encabezado con estética Manhattan Slate */}
         <div className="bg-[#1e293b] p-8 text-white flex justify-between items-center">
           <div>
@@ -39,12 +39,13 @@ export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
             <thead>
               <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                 <th className="p-4 text-left">Nombre Completo</th>
-                <th className="p-4 text-left">Documento / ID</th>
-                <th className="p-4 text-left">Celular</th>
-                <th className="p-4 text-left">Profesión</th>
                 <th className="p-4 text-left">País / Origen</th>
+                <th className="p-8 text-left">Edad</th>
+                 <th className="p-8 text-left">fecha Nac.</th>
                 <th className="p-4 text-left">Estado civil</th>
-                <th className="p-4 text-left">Edad</th>
+                <th className="p-4 text-left">Profesión</th>   
+                <th className="p-4 text-left">Documento / CI</th>
+                <th className="p-4 text-left">Celular</th>  
                 <th className="p-4 text-left">registro</th>
                 <th className="p-4 text-left">Última Visita</th>
               </tr>
@@ -75,17 +76,43 @@ export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
                       </div>
                     </td>
 
-                    {/* Documento */}
-                    <td className="p-4 text-slate-600 font-mono text-sm">
-                      {cliente.documento || "---"}
+                    {/* Nacionalidad */}
+                    <td className="p-4 text-slate-600 uppercase text-xs font-bold">
+                      {cliente.nacionalidad ? (
+                        <span className="bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 border border-slate-200/50">
+                          {cliente.nacionalidad}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic font-normal text-[11px]">
+                          No especificado
+                        </span>
+                      )}
                     </td>
 
-                    {/* Celular */}
-                    <td className="p-4 text-slate-600 font-medium">
-                      {cliente.celular ? (
-                        <span className="flex items-center gap-1">
-                          📞 {cliente.celular}
+                    {/* Edad Dinámica */}
+                    <td className="p-4 text-slate-600 font-semibold text-sm">
+                      {calcularEdad(cliente.fecha_nacimiento)}
+                    </td>
+                    
+
+                       {/* fecha_nacimiento */}
+                  
+                    <td className="p-1 text-slate-400 uppercase text-xs font-bold">
+                      {cliente.fecha_nacimiento ? (
+                        <span className="bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 border border-slate-200/50">
+                          {cliente.fecha_nacimiento}
                         </span>
+                      ) : (
+                        <span className="text-slate-400 italic font-normal text-[14px]">
+                          No especificado
+                        </span>
+                      )}
+                    </td>
+                    
+                         {/* ESTADO CIVIL */}
+                    <td className="p-4 text-slate-600 font-medium capitalize">
+                      {cliente.estado_civil ? (
+                        cliente.estado_civil.toLowerCase()
                       ) : (
                         <span className="text-slate-300">---</span>
                       )}
@@ -100,30 +127,21 @@ export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
                       )}
                     </td>
 
-                    {/* Nacionalidad */}
-                    <td className="p-4 text-slate-600 uppercase text-xs font-bold">
-                      {cliente.nacionalidad ? (
-                        <span className="bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 border border-slate-200/50">
-                          {cliente.nacionalidad}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 italic font-normal text-[11px]">
-                          No especificado
-                        </span>
-                      )}
+
+                    {/* Documento */}
+                    <td className="p-4 text-slate-600 font-mono text-sm">
+                      {cliente.documento || "---"}
                     </td>
-                     {/* Profesión */}
-                    <td className="p-4 text-slate-600 font-medium capitalize">
-                      {cliente.estado_civil ? (
-                        cliente.estado_civil.toLowerCase()
+
+                    {/* Celular */}
+                    <td className="p-4 text-slate-600 font-medium">
+                      {cliente.celular ? (
+                        <span className="flex items-center gap-1">
+                          📞 {cliente.celular}
+                        </span>
                       ) : (
                         <span className="text-slate-300">---</span>
                       )}
-                    </td>
-
-                    {/* Edad Dinámica */}
-                    <td className="p-4 text-slate-600 font-semibold text-sm">
-                      {calcularEdad(cliente.fecha_nacimiento)}
                     </td>
 
                     {/* Fecha de Creación */}

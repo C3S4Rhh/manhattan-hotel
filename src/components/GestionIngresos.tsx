@@ -4,7 +4,11 @@ import { RegistroIngreso } from "./RegistroIngreso";
 import { TablaIngresos } from "./TablaIngresos";
 import { obtenerIngresosPorRango } from "@/services/ingresosService";
 
-export function GestionIngresos() {
+
+export function GestionIngresos({ usuario }: { usuario: any }) {
+  
+  console.log("¿Qué llega en usuario?:", usuario); // <--- REVISA LA CONSOLA DEL NAVEGADOR
+  // ... resto del código
   const [refresh, setRefresh] = useState(0);
   const [ingresos, setIngresos] = useState<any[]>([]);
   const [ingresosAnuales, setIngresosAnuales] = useState<any[]>([]);
@@ -80,7 +84,7 @@ export function GestionIngresos() {
 
         {/* Registro y Totales */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 no-print">
-          <RegistroIngreso onExito={() => setRefresh((prev) => prev + 1)} />
+          <RegistroIngreso usuario={usuario} onExito={() => setRefresh((prev) => prev + 1)} />
           <div className="space-y-4">
             <div className="bg-emerald-900 p-8 rounded-3xl text-white">
               <p className="text-emerald-400 text-[10px] font-black uppercase">Total Ingresos Extra Mensual</p>

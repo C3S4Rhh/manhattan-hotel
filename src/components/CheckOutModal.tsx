@@ -39,53 +39,62 @@ export function CheckOutModal({
     registrarPagoParcial,
   } = useCheckOut(hab, onSuccess);
 
-  useEffect(() => {
-    const calcularTiempo = () => {
-      if (!registro?.fecha_ingreso) return;
 
-      const fechaIngreso = new Date(registro.fecha_ingreso);
-      const horaIngreso = fechaIngreso.getHours();
+  
+     // inicio cronometro
+useEffect(() => {
+  const calcularTiempo = () => {
+    if (!registro?.fecha_ingreso) return;
 
-      // Cálculo base de salida
-      const fechaSalida = new Date(fechaIngreso);
-      fechaSalida.setHours(13, 0, 0, 0);
+    // 1. Parseo manual para evitar desfase de zona horaria
+    const [fechaParte, horaParte] = registro.fecha_ingreso.split("T");
+    const [year, month, day] = fechaParte.split("-").map(Number);
+    const [hours, minutes] = horaParte.split(":").map(Number);
+    
+    const fechaIngreso = new Date(year, month - 1, day, hours, minutes);
+    const ahora = new Date();
 
-      if (horaIngreso >= 13) {
-        fechaSalida.setDate(fechaSalida.getDate() + 1);
-      }
+    // 2. Definir salida: 13:00 del mismo día
+    const fechaSalida = new Date(year, month - 1, day, 13, 0, 0);
 
-      const milisegundosExtra = diasExtra * 24 * 60 * 60 * 1000;
-      fechaSalida.setTime(fechaSalida.getTime() + milisegundosExtra);
+    // 3. Lógica: si entró después de las 13:00, la salida base es mañana a las 13:00
+    if (hours >= 13) {
+      fechaSalida.setDate(fechaSalida.getDate() + 1);
+    }
 
-      const ahora = new Date();
-      const diferencia = fechaSalida.getTime() - ahora.getTime();
+    // 4. Sumar días totales:
+    // Se toma la cantidad contratada (si es 2, sumamos 1 día extra a la base) + días extra manuales
+    const diasContratados = Number(registro?.cantidad_dias) || 1;
+    const totalDiasASumar = (diasContratados - 1) + (Number(diasExtra) || 0);
+    
+    fechaSalida.setDate(fechaSalida.getDate() + totalDiasASumar);
 
-      if (diferencia <= 0) {
-        // El cliente se pasó de hora
-        setEstaAtrasado(true);
-        const excedido = Math.abs(diferencia);
-        const horas = Math.floor(excedido / (1000 * 60 * 60));
-        const minutos = Math.floor((excedido % (1000 * 60 * 60)) / (1000 * 60));
-        setTiempoRestante(
-          `+${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}`,
-        );
-      } else {
-        // El cliente aún tiene tiempo
-        setEstaAtrasado(false);
-        const horas = Math.floor(diferencia / (1000 * 60 * 60));
-        const minutos = Math.floor(
-          (diferencia % (1000 * 60 * 60)) / (1000 * 60),
-        );
-        const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
-        setTiempoRestante(
-          `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`,
-        );
-      }
-    };
+    // 5. Cálculo de diferencia
+    const diferencia = fechaSalida.getTime() - ahora.getTime();
 
-    const timer = setInterval(calcularTiempo, 1000);
-    return () => clearInterval(timer);
-  }, [registro?.fecha_ingreso, diasExtra]);
+    // 6. Actualización de estado
+    if (diferencia <= 0) {
+      setEstaAtrasado(true);
+      const excedido = Math.abs(diferencia);
+      const horas = Math.floor(excedido / (1000 * 60 * 60));
+      const minutos = Math.floor((excedido % (1000 * 60 * 60)) / (1000 * 60));
+      setTiempoRestante(`+${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}`);
+    } else {
+      setEstaAtrasado(false);
+      const horas = Math.floor(diferencia / (1000 * 60 * 60));
+      const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+      const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+      setTiempoRestante(
+        `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`
+      );
+    }
+  };
+
+  calcularTiempo();
+  const timer = setInterval(calcularTiempo, 1000);
+  
+  return () => clearInterval(timer);
+}, [registro?.fecha_ingreso, diasExtra, registro?.cantidad_dias]); 
 
   //fin cronometro
 
@@ -193,34 +202,54 @@ export function CheckOutModal({
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="bg-rose-600 p-6 text-white text-center shrink-0">
+        <div className="bg-red-600 p-6 text-white text-center shrink-0">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">
             Gestión de Salida
           </p>
           <h2 className="text-3xl font-black italic">HAB. #{hab.numero}</h2>
           <button
             onClick={() => setAbiertoCambio(true)}
-            className="text-[12px] font-bold text-white/80 underline mt-2 hover:text-white"
+            className="text-[14px] font-bold text-white/100 underline mt-2 hover:text-white"
           >
             Cambiar de habitación
           </button>
         </div>
 
         <div className="p-8 space-y-6 overflow-y-auto">
-          <div
-            className={`p-3 rounded-xl border text-center ${estaAtrasado ? "bg-red-50 border-red-200" : "bg-slate-900 border-slate-700"}`}
-          >
-            <p
-              className={`text-[9px] font-black uppercase tracking-widest ${estaAtrasado ? "text-red-500" : "text-blue-400"}`}
-            >
-              {estaAtrasado ? "Tiempo excedido" : "Tiempo para Salida "}
-            </p>
-            <p
-              className={`text-2xl font-black font-mono mt-1 ${estaAtrasado ? "text-red-600" : "text-white"}`}
-            >
-              {tiempoRestante}
-            </p>
-          </div>
+           
+         <div className="grid grid-cols-3 gap-3">
+  {/* Cronómetro (ocupa 2 columnas) */}
+  <div
+    className={`col-span-2 p-3 rounded-xl border text-center ${
+      estaAtrasado ? "bg-red-50 border-red-200" : "bg-slate-900 border-slate-700"
+    }`}
+  >
+    <p
+      className={`text-[9px] font-black uppercase tracking-widest ${
+        estaAtrasado ? "text-red-500" : "text-blue-400"
+      }`}
+    >
+      {estaAtrasado ? "Tiempo excedido" : "Tiempo para Salida"}
+    </p>
+    <p
+      className={`text-2xl font-black font-mono mt-1 ${
+        estaAtrasado ? "text-red-600" : "text-white"
+      }`}
+    >
+      {tiempoRestante}
+    </p>
+  </div>
+
+  {/* Días Contratados (ocupa 1 columna) */}
+  <div className="col-span-1 flex flex-col justify-center items-center bg-blue-50 border border-blue-700 rounded-xl p-2 text-center">
+    <p className="text-[7px] font-black text-blue-600 uppercase">
+      Días
+    </p>
+    <p className="text-xl font-black text-blue-700">
+      {registro?.cantidad_dias || 0}
+    </p>
+  </div>
+</div>
 
           <div className="space-y-3">
             <p className="text-[10px] font-black text-slate-400 uppercase ml-1">

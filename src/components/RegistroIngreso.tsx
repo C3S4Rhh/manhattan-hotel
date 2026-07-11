@@ -2,7 +2,8 @@
 import { useState, useRef } from "react";
 import { registrarIngreso } from "@/services/ingresosService";
 
-export function RegistroIngreso({ onExito }: { onExito: () => void }) {
+
+export function RegistroIngreso({ onExito, usuario }: { onExito: () => void, usuario: any }) {
   const [cargando, setCargando] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -16,12 +17,16 @@ export function RegistroIngreso({ onExito }: { onExito: () => void }) {
         descripcion: formData.get("descripcion"),
         categoria: formData.get("categoria"),
         monto: parseFloat(formData.get("monto") as string),
+        tipo_pago: formData.get("tipo_pago"),
+        usuario_id: usuario.id,
+        responsable: usuario.nombre,
       });
       onExito();
       formRef.current?.reset();
-    } catch (error) {
-      alert("Error al guardar");
-    } finally {
+   } catch (error) {
+  console.error("Detalle del error:", error); // Esto imprimirá el error real en la consola
+  alert("Error al guardar: " + (error as any).message); // Esto te dirá en pantalla qué falta
+} finally {
       setCargando(false);
     }
   };
@@ -36,7 +41,13 @@ export function RegistroIngreso({ onExito }: { onExito: () => void }) {
         <option>Desayunos extras</option>
         <option>Otros</option>
       </select>
+      
       <input name="monto" type="number" placeholder="Monto Bs." className="w-full p-2 bg-slate-50 rounded-xl" required />
+      {/* Selector añadido */}
+      <select name="tipo_pago" className="w-full p-2 bg-slate-50 rounded-xl" required>
+        <option value="efectivo">Efectivo</option>
+        <option value="qr">QR</option>
+      </select>
       <button disabled={cargando} className="w-full bg-emerald-600 text-white p-3 rounded-xl font-black uppercase text-[10px]">
         {cargando ? "Guardando..." : "Registrar Ingreso"}
       </button>
