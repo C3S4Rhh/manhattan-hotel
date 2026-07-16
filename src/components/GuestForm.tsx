@@ -150,7 +150,7 @@ export function GuestForm({
     <option value="casado">Casado(a)</option>
     <option value="viudo">Viudo(a)</option>
     <option value="divorciado">Divorciado(a)</option>
-     <option value="divorciado">infante</option>
+     <option value="infante">infante</option>
   </select>
 </div>
     </div>
