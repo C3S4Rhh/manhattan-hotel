@@ -310,6 +310,7 @@ useEffect(() => {
                   type="number"
                   step="0.5"
                   value={diasExtra}
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                   onChange={(e) => setDiasExtra(Number(e.target.value))}
                   className="w-full p-2 rounded-lg border text-sm font-bold"
                 />
@@ -321,6 +322,7 @@ useEffect(() => {
                 <input
                   type="number"
                   value={descuentoMonto}
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                   onChange={(e) =>
                     setDescuentoMonto(
                       Math.max(0, parseInt(e.target.value) || 0),
@@ -370,6 +372,7 @@ useEffect(() => {
               <input
                 type="number"
                 value={pagoEfectivo}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => setPagoEfectivo(Number(e.target.value))}
                 className="w-full p-2 border rounded-lg font-bold"
               />
@@ -381,6 +384,7 @@ useEffect(() => {
               <input
                 type="number"
                 value={pagoQR}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => setPagoQR(Number(e.target.value))}
                 className="w-full p-2 border rounded-lg font-bold"
               />
