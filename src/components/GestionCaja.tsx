@@ -82,7 +82,11 @@ export function GestionCaja({ usuario, onClose }: any) {
     if (isNaN(montoFinal)) {
       return alert("Ingrese un monto real contado.");
     }
-
+ if (montoFinal.toFixed(2) !== totalEnCaja.toFixed(2)) {
+    return alert(
+      `El monto no coincide. El total esperado es ${totalEnCaja.toFixed(2)} Bs.`
+    );
+  }
     const { error } = await supabase
       .from("cajas")
       .update({
