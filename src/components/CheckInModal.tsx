@@ -83,6 +83,7 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
               <input
                 type="number"
                 value={precioFinal}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => {
                   const nuevoTotal = Number(e.target.value);
                   setPrecioBaseUnitario(nuevoTotal / diasEstadia);
@@ -99,6 +100,7 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
                 type="number"
                 min="1"
                 value={diasEstadia}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => manejarCambioDias(Number(e.target.value))}
                 className="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-blue-500 bg-slate-50 font-bold"
               />
@@ -114,6 +116,7 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
               <input
                 type="number"
                 value={pagoEfectivo}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => setPagoEfectivo(Number(e.target.value))}
                 className="w-full border-2 border-emerald-100 p-3 rounded-xl bg-emerald-50 font-bold text-emerald-600"
               />
@@ -125,6 +128,7 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
               <input
                 type="number"
                 value={pagoQR}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => setPagoQR(Number(e.target.value))}
                 className="w-full border-2 border-sky-100 p-3 rounded-xl bg-sky-50 font-bold text-sky-600"
               />
