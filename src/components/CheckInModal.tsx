@@ -69,7 +69,7 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
                 onChange={(e) => manejarCambioPersonas(Number(e.target.value))}
                 className="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-blue-500 bg-slate-50 font-bold"
               >
-                {[1, 2, 3, 4, 5].map((n) => (
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                   <option key={n} value={n}>
                     {n} Pax
                   </option>
