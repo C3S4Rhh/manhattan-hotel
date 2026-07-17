@@ -50,6 +50,10 @@ export function HistorialCajas() {
             <th className="pb-4 text-left">Apertura</th>
             <th className="pb-4 text-left">Cierre</th>
             <th className="pb-4 text-right">Monto Inicial</th>
+            <th className="pb-4 text-right">Monto gastos</th>
+            <th className="pb-4 text-right">Monto efectivo</th>
+            <th className="pb-4 text-right">Monto qr</th>
+            <th className="pb-4 text-right">Total efectivo</th>
             <th className="pb-4 text-right">Monto Final</th>
           </tr>
         </thead>
@@ -66,6 +70,10 @@ export function HistorialCajas() {
               <td className="py-4 text-slate-500 text-xs">{new Date(caja.fecha_apertura).toLocaleString()}</td>
               <td className="py-4 text-slate-500 text-xs">{caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : '-'}</td>
               <td className="py-4 text-right font-bold">{Number(caja.monto_apertura || 0).toFixed(2)} Bs.</td>
+              <td className="py-4 text-right font-bold text-red-500">{Number(caja.monto_gastos || 0).toFixed(2)} Bs.</td>
+              <td className="py-4 text-right font-bold">{Number(caja.monto_efectivo || 0).toFixed(2)} Bs.</td>
+              <td className="py-4 text-right font-bold">{Number(caja.monto_qr || 0).toFixed(2)} Bs.</td>
+              <td className="py-4 text-right font-black text-slate-800">{(Number(caja.monto_apertura || 0) + Number(caja.monto_efectivo || 0)).toFixed(2)} Bs.</td>
               <td className="py-4 text-right font-black text-emerald-600">{caja.monto_cierre ? `${Number(caja.monto_cierre).toFixed(2)} Bs.` : '-'}</td>
             </tr>
           ))}
