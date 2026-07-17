@@ -62,6 +62,31 @@ const totalGastos = movimientos
 const totalReposiciones = movimientos
   .filter(m => m.tipo === 'reposicion')
   .reduce((acc, m) => acc + m.monto, 0);
+
+
+  const eliminarMovimiento = async (id: string) => {
+  // 1. Verificar si es admin
+  if (usuarioActual.rol !== 'administrador') {
+    return alert("Solo los administradores pueden eliminar movimientos.");
+  }
+
+  if (!confirm("¿Estás seguro de que deseas eliminar este movimiento? Esta acción afectará el saldo.")) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('caja_chica')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error("Error al eliminar:", error);
+    alert("No se pudo eliminar el movimiento.");
+  } else {
+    // Recargar datos para actualizar la tabla y el saldo
+    await cargarDatos();
+  }
+};
   return (
     <div className="p-8 max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border border-slate-100">
       <h1 className="text-2xl font-black uppercase mb-8">Caja Chica</h1>
@@ -107,13 +132,32 @@ const totalReposiciones = movimientos
       </div>
 
       <table className="w-full text-sm">
-        <thead><tr className="text-slate-400 uppercase text-[10px] border-b"><th className="pb-2 text-left">Fecha</th><th className="pb-2 text-left">Operador</th><th className="pb-2 text-left">Descripción</th><th className="pb-2 text-right">Monto</th></tr></thead>
+        <thead>
+          <tr className="text-slate-400 uppercase text-[10px] border-b">
+            <th className="pb-2 text-left">Fecha</th>
+            <th className="pb-2 text-left">Operador</th>
+            <th className="pb-2 text-left">Descripción</th>
+            <th className="pb-2 text-right">Monto</th>
+            {usuarioActual.rol === 'administrador' && <th className="pb-2 text-center">Acción</th>}
+            </tr>
+            </thead>
         <tbody className="divide-y">{movimientos.map((m) => (
           <tr key={m.id}>
             <td className="py-3 text-slate-500">{new Date(m.fecha).toLocaleDateString()}</td>
             <td className="py-3 font-bold">{m.nombreOperador}</td>
             <td className="py-3">{m.descripcion}</td>
             <td className={`py-3 text-right font-bold ${m.tipo === 'gasto' ? 'text-rose-500' : 'text-emerald-500'}`}>{m.tipo === 'gasto' ? '-' : '+'}{m.monto.toFixed(2)}</td>
+          {/* Botón de eliminar solo para admins */}
+        {usuarioActual.rol === 'administrador' && (
+          <td className="py-3 text-center">
+            <button 
+              onClick={() => eliminarMovimiento(m.id)}
+              className="text-rose-400 hover:text-rose-600 font-bold text-[10px] uppercase"
+            >
+              Eliminar
+            </button>
+          </td>
+        )}
           </tr>
         ))}</tbody>
       </table>
