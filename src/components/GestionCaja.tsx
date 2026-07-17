@@ -92,6 +92,9 @@ export function GestionCaja({ usuario, onClose }: any) {
       .update({
         estado: "cerrada",
         monto_cierre: montoFinal,
+        monto_efectivo: totalEfectivo, 
+        monto_qr: totalQR,
+        monto_gastos: totalGastos,
         fecha_cierre: new Date().toISOString(),
       })
       .eq("id", cajaActiva.id);
@@ -118,6 +121,15 @@ export function GestionCaja({ usuario, onClose }: any) {
     (acc, g) => acc + Math.abs(Number(g.monto) || 0),
     0,
   );
+
+  const totalEfectivo = movimientos.reduce((acc, m) => acc + Number(m.monto_efectivo || 0), 0) + 
+                      ingresosExtra.filter(i => i.tipo_pago === 'efectivo').reduce((acc, i) => acc + Number(i.monto || 0), 0) -
+                      gastos.filter(g => g.tipo_pago === 'efectivo').reduce((acc, g) => acc + Number(g.monto || 0), 0);
+
+  const totalQR = movimientos.reduce((acc, m) => acc + Number(m.monto_qr || 0), 0) + 
+                ingresosExtra.filter(i => i.tipo_pago === 'qr').reduce((acc, i) => acc + Number(i.monto || 0), 0) -
+                gastos.filter(g => g.tipo_pago === 'qr').reduce((acc, g) => acc + Number(g.monto || 0), 0);
+ 
   const totalEnCaja =
     Number(cajaActiva?.monto_apertura || 0) +
     totalIngresos +
