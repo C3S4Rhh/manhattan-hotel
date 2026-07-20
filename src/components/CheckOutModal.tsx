@@ -23,6 +23,7 @@ export function CheckOutModal({
   const [cargandoRegistro, setCargandoRegistro] = useState(false);
   const [tiempoRestante, setTiempoRestante] = useState<string>("");
   const [estaAtrasado, setEstaAtrasado] = useState<boolean>(false);
+  const [abiertoConfirmarSalida, setAbiertoConfirmarSalida] = useState(false);
   const {
     registro,
     huespedesDetalle,
@@ -405,7 +406,7 @@ useEffect(() => {
 
           <div className="grid gap-3 pt-2">
             <button
-              onClick={realizarSalidaTotal}
+              onClick={() => setAbiertoConfirmarSalida(true)}
               disabled={saldoFinal - (pagoEfectivo + pagoQR) > 0 || procesando}
               className={`font-black py-4 rounded-2xl shadow-lg transition-all uppercase text-xs tracking-widest ${
                 saldoFinal - (pagoEfectivo + pagoQR) <= 0
@@ -433,6 +434,34 @@ useEffect(() => {
           onSuccess={onSuccess}
         />
       )}
+
+      {abiertoConfirmarSalida && (
+  <div className="fixed inset-0 bg-slate-900/50 z-[200] flex items-center justify-center p-4">
+    <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+      <h3 className="text-lg font-black text-slate-800 mb-2">¿Finalizar estancia?</h3>
+      <p className="text-sm text-slate-600 mb-6">
+        Esta acción marcará la habitación como disponible y finalizará el registro. ¿Estás seguro de continuar?
+      </p>
+      <div className="flex gap-3">
+        <button
+          onClick={() => setAbiertoConfirmarSalida(false)}
+          className="flex-1 py-2 rounded-lg bg-slate-100 font-bold text-slate-600"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={() => {
+            setAbiertoConfirmarSalida(false);
+            realizarSalidaTotal();
+          }}
+          className="flex-1 py-2 rounded-lg bg-emerald-600 font-bold text-white"
+        >
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
