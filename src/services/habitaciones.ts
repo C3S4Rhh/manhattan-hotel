@@ -12,14 +12,27 @@ export const habitacionesService = {
   async getAll() {
     const { data, error } = await supabase
       .from('habitaciones')
-      .select('*')
+     .select(`
+        *,
+        hospedajes (
+          id,
+          fecha_ingreso,
+          nombre_huesped,
+          estado,
+          cantidad_dias,
+          medios_dias_extra
+        )
+      `)
       .order('numero', { ascending: true })
     
     if (error) {
       console.error("Error en getAll:", error.message)
       throw error
     }
-    return data
+    return data?.map(hab => ({
+      ...hab,
+      hospedaje_activo: hab.hospedajes?.find((h: any) => h.estado === 'activo')
+    })) || []
   },
 
   /**
