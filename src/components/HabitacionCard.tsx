@@ -1,8 +1,7 @@
 'use client'
-
+import { useTiempoSalida } from "@/hook/useTiempoSalida";
 export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any) => void }) {
-  
-  // 1. Diccionario con claves en MINÚSCULAS
+ 
   const CONFIG_ESTADOS: Record<string, { border: string, bg: string, text: string, label: string, shadow: string }> = {
     'reserva': { 
       border: 'border-violet-500', 
@@ -71,11 +70,10 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
     'sl': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'S.L.' }
   };
 
-  // 2. Normalización a minúsculas
+  
   const estadoRecibido = hab.estado_actual?.toLowerCase() || 'L';
   const limpiezaRecibida = hab.estado_limpieza?.toLowerCase() || 'limpio';
   
-  // 3. Selección de estilo con respaldo (fallback)
   const estilo = CONFIG_ESTADOS[estadoRecibido] || CONFIG_ESTADOS['L'];
   const estiloLimpieza = CONFIG_LIMPIEZA[limpiezaRecibida] || CONFIG_LIMPIEZA['limpio'];
 
@@ -89,6 +87,28 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
     return '🏨';
   };
 
+  //FUNCOM PARA ALARMA
+const estadoNormalizado = hab.estado_actual?.toUpperCase();
+const hospedajeActivo = hab.hospedaje_activo;
+
+const cantidadDias = hospedajeActivo?.cantidad_dias || 1;
+const diasExtra = hospedajeActivo?.medios_dias_extra || 0; 
+const fechaIngreso = hospedajeActivo?.fecha_ingreso;
+
+const horasRestantes = useTiempoSalida(
+  estadoNormalizado === 'O' ? fechaIngreso : undefined, 
+  cantidadDias,
+  diasExtra
+);
+// 3. Condición para la campana: 
+// Que esté ocupada, que tenga horas válidas y que sea menos de 4 horas
+const mostrarAlerta = hab.estado_actual === 'O' && horasRestantes > 0 && horasRestantes <= 4;
+
+console.log(`Habitación ${hab.numero}:`, {
+  estado: hab.estado_actual,
+  horasCalculadas: horasRestantes,
+  mostrar: mostrarAlerta
+});
   return (
     <div 
       onClick={() => onSelect(hab)}
@@ -99,7 +119,11 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
           <h3 className="text-3xl font-black text-slate-800 tracking-tighter">#{hab.numero}</h3>
           <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest italic">{hab.tipo}</p>
         </div>
-        
+        {mostrarAlerta && (
+          <span className="animate-bounce text-xl" title="Quedan menos de 4 horas">
+            🔔
+          </span>
+        )}
         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${estilo.text} border-current/20`}>
           • {estilo.label}
         </span>
