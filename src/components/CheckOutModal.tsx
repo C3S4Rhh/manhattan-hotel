@@ -57,10 +57,15 @@ useEffect(() => {
     // 2. Definir salida: 13:00 del mismo día
     const fechaSalida = new Date(year, month - 1, day, 13, 0, 0);
 
-    // 3. Lógica: si entró después de las 13:00, la salida base es mañana a las 13:00
-    if (hours >= 13) {
-      fechaSalida.setDate(fechaSalida.getDate() + 1);
-    }
+    if (hours < 5) {
+  // Entró antes de las 5am: Se cuenta el día actual. No hacemos nada, fechaSalida base es hoy a las 13:00.
+} else if (hours >= 5 && hours < 13) {
+  // Entró en horario de cortesía: La salida final se desplaza 1 día adicional.
+  fechaSalida.setDate(fechaSalida.getDate() + 1);
+} else {
+  // Entró después de las 13:00: La salida base es mañana a las 13:00.
+  fechaSalida.setDate(fechaSalida.getDate() + 1);
+}
 
     // 4. Sumar días totales:
     // Se toma la cantidad contratada (si es 2, sumamos 1 día extra a la base) + días extra manuales
