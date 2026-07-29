@@ -263,7 +263,7 @@ export function GestionCaja({ usuario, onClose }: any) {
                 </p>
               </div>
 
-               </div>
+              
               <div >
                
               </div>
