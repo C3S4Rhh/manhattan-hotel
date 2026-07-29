@@ -262,6 +262,30 @@ export function GestionCaja({ usuario, onClose }: any) {
                   {totalEnCaja.toFixed(2)}Bs.
                 </p>
               </div>
+
+               </div>
+              <div >
+               
+              </div>
+               <div className="bg-orange-600 p-6 rounded-3xl text-white">
+                <p className="text-[10px] font-black opacity-80 uppercase">
+                  Total EF.
+                </p>
+                <p className="text-[18px] text-2xl font-black">
+                  {totalEfectivo.toFixed(2)}Bs.
+                </p>
+              </div>
+               <div className="bg-yellow-600 p-6 rounded-3xl text-white">
+                <p className="text-[10px] font-black opacity-80 uppercase">
+                  Total  QR
+                </p>
+                <p className="text-[18px] text-2xl font-black">
+                  {totalQR.toFixed(2)}Bs.
+                </p>
+              </div>
+               <div >
+               
+              </div>
             </div>
 
             <div className="px-8 pb-8 overflow-y-auto">
