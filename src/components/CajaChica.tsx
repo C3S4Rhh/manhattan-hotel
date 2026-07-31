@@ -38,23 +38,46 @@ export function CajaChica({ usuarioActual }: { usuarioActual: any }) {
 
   useEffect(() => { cargarDatos(); }, [fechaDesde, fechaHasta]);
 
-  const registrarMovimiento = async (tipo: 'gasto' | 'reposicion') => {
+const registrarMovimiento = async (tipo: 'gasto' | 'reposicion') => {
     const valor = parseFloat(monto);
     if (!valor || valor <= 0) return alert("Ingrese un monto válido");
-    if (tipo === 'gasto' && saldo < valor) return alert("Saldo insuficiente");
 
     setCargando(true);
-    await supabase.from('caja_chica').insert({
+
+    const { data: ultimoMov } = await supabase
+      .from('caja_chica')
+      .select('saldo_actual')
+      .order('fecha', { ascending: false })
+      .limit(1);
+
+    const saldoRealActual = ultimoMov && ultimoMov.length > 0 ? Number(ultimoMov[0].saldo_actual) : 0;
+
+    if (tipo === 'gasto' && saldoRealActual < valor) {
+      setCargando(false);
+      return alert("Saldo insuficiente");
+    }
+
+    const nuevoSaldo = tipo === 'gasto' ? saldoRealActual - valor : saldoRealActual + valor;
+
+    const { error } = await supabase.from('caja_chica').insert({
       usuario_id: usuarioActual.id,
       descripcion: descripcion || (tipo === 'reposicion' ? 'Reposición' : 'Gasto'),
       monto: valor,
       tipo,
-      saldo_actual: tipo === 'gasto' ? saldo - valor : saldo + valor
+      saldo_actual: nuevoSaldo
     });
-    setMonto(''); setDescripcion('');
-    await cargarDatos();
+
+    if (error) {
+      console.error("Error al registrar:", error);
+      alert("No se pudo registrar el movimiento.");
+    } else {
+      setMonto('');
+      setDescripcion('');
+      await cargarDatos();
+    }
     setCargando(false);
   };
+  
 const totalGastos = movimientos
   .filter(m => m.tipo === 'gasto')
   .reduce((acc, m) => acc + m.monto, 0);
