@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDashboard } from "@/hook/useDashboard";
 import { useListaHuespedes } from "@/hook/useListaHuespedes";
 import { useClientesGlobal } from "@/hook/useClientesGlobal";
@@ -22,6 +22,7 @@ import { VistaFinanzas } from "@/components/VistaFinanzas";
 import { GestionIngresos } from "@/components/GestionIngresos";
 import { GestionIngresosHabitaciones } from "@/components/GestionIngresosHabitaciones";
 import { VistaReservas } from "@/components/VistaReservas";
+import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const [vista, setVista] = useState<
@@ -63,8 +64,29 @@ export default function Home() {
   const { todosLosClientes, refrescar: refrescarClientes } =
     useClientesGlobal();
 
+  const [cajaAbierta, setCajaAbierta] = useState(false);
+
+  const verificarEstadoCaja = async () => {
+    if (!usuarioActivo) {
+      setCajaAbierta(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("cajas")
+      .select("*")
+      .eq("usuario_id", usuarioActivo.id)
+      .eq("estado", "abierta")
+      .maybeSingle();
+
+    setCajaAbierta(!!data);
+  };
+
+  useEffect(() => {
+    verificarEstadoCaja();
+  }, [usuarioActivo]);
+
   if (loading) return <div className="bg-slate-900 min-h-screen" />;
-  if (!usuarioActivo) return <Login onLoginSuccess={setUsuarioActivo} />;
+  if (!usuarioActivo) return <Login onLoginSuccess={(user) => { setUsuarioActivo(user); verificarEstadoCaja(); }} />;
 
   return (
     <main className="bg-slate-50 min-h-screen">
@@ -102,7 +124,14 @@ export default function Home() {
                     <HabitacionCard
                       key={hab.id}
                       hab={hab}
-                      onSelect={manejarSeleccion}
+                      onSelect={(h) => {
+                        if (!cajaAbierta) {
+                          alert("Debes abrir caja primero");
+                          return;
+                        }
+                        manejarSeleccion(h);
+                      }}
+                      cajaAbierta={cajaAbierta}
                     />
                   ))}
                 </div>
