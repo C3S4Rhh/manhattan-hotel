@@ -89,14 +89,7 @@ export function HistorialCajas() {
                 <span className="text-slate-400 block text-[10px]">QR:</span>
                 <span className="font-bold text-slate-700">{sumaQr.toFixed(2)} Bs.</span>
               </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">Total Efectivo:</span>
-                <span className="font-bold text-slate-700">{sumaTotalEfectivo.toFixed(2)} Bs.</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[10px]">Monto Final:</span>
-                <span className="font-black text-emerald-800">{sumaFinal.toFixed(2)} Bs.</span>
-              </div>
+              
             </div>
           </div>
         )}
