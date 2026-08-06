@@ -6,6 +6,7 @@ export function TablaIngresos({ ingresos }: { ingresos: any[] }) {
           <th className="p-4">Fecha</th>
           <th className="p-4">Descripción</th>
           <th className="p-4">Categoría</th>
+          <th className="p-4">Pago</th>
           <th className="p-4 text-right">Monto</th>
         </tr>
       </thead>
@@ -15,6 +16,7 @@ export function TablaIngresos({ ingresos }: { ingresos: any[] }) {
             <td className="p-4 font-bold">{new Date(i.fecha).toLocaleDateString()}</td>
             <td className="p-4 font-black">{i.descripcion}</td>
             <td className="p-4 uppercase text-xs">{i.categoria}</td>
+            <td className="p-4 uppercase text-xs">{i.tipo_pago}</td>
             <td className="p-4 text-right font-black text-emerald-600">+{parseFloat(i.monto).toFixed(2)} Bs.</td>
           </tr>
         ))}
