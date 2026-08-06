@@ -1,7 +1,8 @@
 'use client'
 import { useTiempoSalida } from "@/hook/useTiempoSalida";
-export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any) => void }) {
- 
+
+export function HabitacionCard({ hab, onSelect, cajaAbierta = true }: { hab: any, onSelect: (h: any) => void, cajaAbierta?: boolean }) {
+  
   const CONFIG_ESTADOS: Record<string, { border: string, bg: string, text: string, label: string, shadow: string }> = {
     'reserva': { 
       border: 'border-violet-500', 
@@ -61,7 +62,6 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
     }
   };
 
-  // 2. Nueva Configuración de Limpieza
   const CONFIG_LIMPIEZA: Record<string, { bg: string, text: string, label: string }> = {
     'lo': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'L.O.' },
     'sucio': { bg: 'bg-rose-100', text: 'text-rose-700', label: 'Sucio' },
@@ -70,7 +70,6 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
     'sl': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'S.L.' }
   };
 
-  
   const estadoRecibido = hab.estado_actual?.toLowerCase() || 'L';
   const limpiezaRecibida = hab.estado_limpieza?.toLowerCase() || 'limpio';
   
@@ -87,32 +86,32 @@ export function HabitacionCard({ hab, onSelect }: { hab: any, onSelect: (h: any)
     return '🏨';
   };
 
-  //FUNCOM PARA ALARMA
-const estadoNormalizado = hab.estado_actual?.toUpperCase();
-const hospedajeActivo = hab.hospedaje_activo;
+  const estadoNormalizado = hab.estado_actual?.toUpperCase();
+  const hospedajeActivo = hab.hospedaje_activo;
 
-const cantidadDias = hospedajeActivo?.cantidad_dias || 1;
-const diasExtra = hospedajeActivo?.medios_dias_extra || 0; 
-const fechaIngreso = hospedajeActivo?.fecha_ingreso;
+  const cantidadDias = hospedajeActivo?.cantidad_dias || 1;
+  const diasExtra = hospedajeActivo?.medios_dias_extra || 0; 
+  const fechaIngreso = hospedajeActivo?.fecha_ingreso;
 
-const horasRestantes = useTiempoSalida(
-  estadoNormalizado === 'O' ? fechaIngreso : undefined, 
-  cantidadDias,
-  diasExtra
-);
-// 3. Condición para la campana: 
-// Que esté ocupada, que tenga horas válidas y que sea menos de 4 horas
-const mostrarAlerta = hab.estado_actual === 'O' && horasRestantes > 0 && horasRestantes <= 4;
+  const horasRestantes = useTiempoSalida(
+    estadoNormalizado === 'O' ? fechaIngreso : undefined, 
+    cantidadDias,
+    diasExtra
+  );
 
-console.log(`Habitación ${hab.numero}:`, {
-  estado: hab.estado_actual,
-  horasCalculadas: horasRestantes,
-  mostrar: mostrarAlerta
-});
+  const mostrarAlerta = hab.estado_actual === 'O' && horasRestantes > 0 && horasRestantes <= 4;
+
   return (
     <div 
-      onClick={() => onSelect(hab)}
-      className={`group cursor-pointer transition-all duration-500 transform hover:-translate-y-2 rounded-3xl p-6 border-b-8 shadow-2xl relative overflow-hidden ${estilo.bg} ${estilo.border} ${estilo.shadow}`}
+      onClick={() => {
+        if (cajaAbierta) {
+          onSelect(hab);
+        }
+      }}
+      title={!cajaAbierta ? "Debes abrir caja primero" : ""}
+      className={`group transition-all duration-500 rounded-3xl p-6 border-b-8 shadow-2xl relative overflow-hidden ${
+        !cajaAbierta ? "opacity-50 cursor-not-allowed pointer-events-auto" : "cursor-pointer transform hover:-translate-y-2"
+      } ${estilo.bg} ${estilo.border} ${estilo.shadow}`}
     >
       <div className="flex justify-between items-start mb-4">
         <div>
@@ -129,13 +128,11 @@ console.log(`Habitación ${hab.numero}:`, {
         </span>
       </div>
 
-      {/* Fila de estados */}
       <div className="mb-6 flex flex-col gap-2">
         <span className={`self-start px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${estiloLimpieza.bg} ${estiloLimpieza.text}`}>
           {estiloLimpieza.label}
         </span>
         
-        {/* Visualización de Observaciones */}
         {hab.observaciones && (
           <div className="bg-amber-50 border-l-4 border-amber-400 p-2 rounded-r-lg">
             <p className="text-[15px] font-bold text-amber-700 uppercase italic">
@@ -150,7 +147,7 @@ console.log(`Habitación ${hab.numero}:`, {
           {getIcon(hab.tipo)}
         </span>
         <div className="text-right">
-            <p className="text-[8px] font-bold text-slate-300 uppercase leading-none">Precio Base</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase leading-none">Precio Base</p>
             <p className={`text-xl font-black tracking-tighter ${estilo.text}`}>Bs. {hab.precio_base}</p>
         </div>
       </div>
