@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { FormularioGasto } from "./FormularioGasto";
 import { generarReporteCaja } from "@/utils/reportePdf";
 
-export function GestionCaja({ usuario, onClose }: any) {
+export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
   const [cajaActiva, setCajaActiva] = useState<any>(null);
   const [movimientos, setMovimientos] = useState<any[]>([]);
   const [gastos, setGastos] = useState<any[]>([]);
@@ -73,8 +73,10 @@ export function GestionCaja({ usuario, onClose }: any) {
       alert("No se pudo abrir la caja.");
     } else {
       cargarDatos(); // Refresca los datos para que aparezca la interfaz de caja activa
+      if (onCajaChange) onCajaChange();
     }
   };
+
   const cerrarCaja = async () => {
     if (!cajaActiva) return;
 
@@ -82,17 +84,21 @@ export function GestionCaja({ usuario, onClose }: any) {
     if (isNaN(montoFinal)) {
       return alert("Ingrese un monto real contado.");
     }
- if (montoFinal.toFixed(2) !== totalEnCaja.toFixed(2)) {
-    return alert(
-      `El monto no coincide. El total esperado es ${totalEnCaja.toFixed(2)} Bs.`
-    );
-  }
+
+    // 2. Validar que coincida con el total calculado
+    // Usamos toFixed(2) para comparar correctamente valores decimales
+    if (montoFinal.toFixed(2) !== totalEnCaja.toFixed(2)) {
+      return alert(
+        `El monto no coincide. El total esperado es ${totalEnCaja.toFixed(2)} Bs.`,
+      );
+    }
+
     const { error } = await supabase
       .from("cajas")
       .update({
         estado: "cerrada",
         monto_cierre: montoFinal,
-        monto_efectivo: totalEfectivo, 
+        monto_efectivo: totalEfectivo,
         monto_qr: totalQR,
         monto_gastos: totalGastos,
         fecha_cierre: new Date().toISOString(),
@@ -106,6 +112,7 @@ export function GestionCaja({ usuario, onClose }: any) {
       alert("Caja cerrada exitosamente.");
       setMostrarModalCierre(false);
       cargarDatos(); // Esto hará que el componente detecte que ya no hay caja abierta
+      if (onCajaChange) onCajaChange();
     }
   };
 
@@ -121,15 +128,24 @@ export function GestionCaja({ usuario, onClose }: any) {
     (acc, g) => acc + Math.abs(Number(g.monto) || 0),
     0,
   );
+  // Dentro de GestionCaja, junto a tus otros cálculos
+  const totalEfectivo =
+    movimientos.reduce((acc, m) => acc + Number(m.monto_efectivo || 0), 0) +
+    ingresosExtra
+      .filter((i) => i.tipo_pago === "efectivo")
+      .reduce((acc, i) => acc + Number(i.monto || 0), 0) -
+    gastos
+      .filter((g) => g.tipo_pago === "efectivo")
+      .reduce((acc, g) => acc + Number(g.monto || 0), 0);
 
-  const totalEfectivo = movimientos.reduce((acc, m) => acc + Number(m.monto_efectivo || 0), 0) + 
-                      ingresosExtra.filter(i => i.tipo_pago === 'efectivo').reduce((acc, i) => acc + Number(i.monto || 0), 0) -
-                      gastos.filter(g => g.tipo_pago === 'efectivo').reduce((acc, g) => acc + Number(g.monto || 0), 0);
-
-  const totalQR = movimientos.reduce((acc, m) => acc + Number(m.monto_qr || 0), 0) + 
-                ingresosExtra.filter(i => i.tipo_pago === 'qr').reduce((acc, i) => acc + Number(i.monto || 0), 0) -
-                gastos.filter(g => g.tipo_pago === 'qr').reduce((acc, g) => acc + Number(g.monto || 0), 0);
- 
+  const totalQR =
+    movimientos.reduce((acc, m) => acc + Number(m.monto_qr || 0), 0) +
+    ingresosExtra
+      .filter((i) => i.tipo_pago === "qr")
+      .reduce((acc, i) => acc + Number(i.monto || 0), 0) -
+    gastos
+      .filter((g) => g.tipo_pago === "qr")
+      .reduce((acc, g) => acc + Number(g.monto || 0), 0);
   const totalEnCaja =
     Number(cajaActiva?.monto_apertura || 0) +
     totalIngresos +
@@ -182,11 +198,11 @@ export function GestionCaja({ usuario, onClose }: any) {
                       usuario,
                       movimientos,
                       gastos,
-                     ingresosExtra, 
-                     Number(cajaActiva.monto_apertura),
-      totalIngresos, // 5to argumento
-      totalGastos,   // 6to argumento
-      totalEnCaja
+                      ingresosExtra,
+                      Number(cajaActiva.monto_apertura),
+                      totalIngresos, // 5to argumento
+                      totalGastos, // 6to argumento
+                      totalEnCaja,
                     )
                   }
                   className="bg-emerald-800 text-white px-4 py-3 rounded-xl font-black uppercase text-[10px]"
@@ -263,11 +279,11 @@ export function GestionCaja({ usuario, onClose }: any) {
                 </p>
               </div>
 
-              
-              <div >
-               
+              <div>
+                
+
               </div>
-               <div className="bg-orange-600 p-6 rounded-3xl text-white">
+              <div className="bg-orange-600 p-6 rounded-3xl text-white">
                 <p className="text-[10px] font-black opacity-80 uppercase">
                   Total EF.
                 </p>
@@ -275,17 +291,15 @@ export function GestionCaja({ usuario, onClose }: any) {
                   {totalEfectivo.toFixed(2)}Bs.
                 </p>
               </div>
-               <div className="bg-yellow-600 p-6 rounded-3xl text-white">
+              <div className="bg-yellow-600 p-6 rounded-3xl text-white">
                 <p className="text-[10px] font-black opacity-80 uppercase">
-                  Total  QR
+                  Total QR
                 </p>
                 <p className="text-[18px] text-2xl font-black">
                   {totalQR.toFixed(2)}Bs.
                 </p>
               </div>
-               <div >
-               
-              </div>
+              <div></div>
             </div>
 
             <div className="px-8 pb-8 overflow-y-auto">
