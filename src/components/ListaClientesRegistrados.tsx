@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 // Función auxiliar idéntica al hook para procesar la edad en la tabla
 const calcularEdad = (fechaNacimiento: string): string => {
   if (!fechaNacimiento) return "---";
@@ -15,11 +17,28 @@ const calcularEdad = (fechaNacimiento: string): string => {
 };
 
 export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
+  const [busqueda, setBusqueda] = useState("");
+
+  // Filtrar clientes según nombre, documento o celular
+  const clientesFiltrados = clientes.filter((cliente) => {
+    const textoBusqueda = busqueda.toLowerCase().trim();
+    const nombre = cliente.nombre ? cliente.nombre.toLowerCase() : "";
+    const documento = cliente.documento ? cliente.documento.toLowerCase() : "";
+    const celular = cliente.celular ? cliente.celular.toString() : "";
+
+    return (
+      nombre.includes(textoBusqueda) ||
+      documento.includes(textoBusqueda) ||
+      celular.includes(textoBusqueda)
+    );
+  });
+
   return (
     <div className="bg-slate-50 p-4 md:p-8 rounded-3xl shadow-inner min-h-screen">
       <div className="max-w-12xl mx-auto bg-white rounded-[2rem] shadow-2xl overflow-hidden">
+        
         {/* Encabezado con estética Manhattan Slate */}
-        <div className="bg-[#1e293b] p-8 text-white flex justify-between items-center">
+        <div className="bg-[#1e293b] p-8 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 className="text-3xl font-black uppercase tracking-tighter">
               Historial de Clientes
@@ -28,9 +47,34 @@ export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
               Directorio global de huéspedes registrados
             </p>
           </div>
-          <span className="bg-blue-500/20 text-blue-400 px-4 py-2 rounded-xl font-black text-sm border border-blue-500/30">
-            {clientes.length} REGISTROS
-          </span>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Barra de Búsqueda */}
+            <div className="relative w-full md:w-72">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 pointer-events-none">
+                🔍
+              </span>
+              <input
+                type="text"
+                placeholder="Buscar por nombre, CI o celular..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full bg-slate-800 text-white placeholder-slate-400 text-xs font-semibold pl-9 pr-4 py-3 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500 transition-colors"
+              />
+              {busqueda && (
+                <button
+                  onClick={() => setBusqueda("")}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-white text-xs font-bold"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <span className="bg-blue-500/20 text-blue-400 px-4 py-3 rounded-xl font-black text-sm border border-blue-500/30 whitespace-nowrap">
+              {clientesFiltrados.length} / {clientes.length}
+            </span>
+          </div>
         </div>
 
         {/* Tabla Responsiva */}
@@ -41,135 +85,142 @@ export function ListaClientesRegistrados({ clientes }: { clientes: any[] }) {
                 <th className="p-4 text-left">Nombre Completo</th>
                 <th className="p-4 text-left">País / Origen</th>
                 <th className="p-8 text-left">Edad</th>
-                 <th className="p-8 text-left">fecha Nac.</th>
-                <th className="p-4 text-left">Estado civil</th>
+                <th className="p-8 text-left">Fecha Nac.</th>
+                <th className="p-4 text-left">Estado Civil</th>
                 <th className="p-4 text-left">Profesión</th>   
                 <th className="p-4 text-left">Documento / CI</th>
                 <th className="p-4 text-left">Celular</th>  
-                <th className="p-4 text-left">registro</th>
+                <th className="p-4 text-left">Registro</th>
                 <th className="p-4 text-left">Última Visita</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {clientes.map((cliente) => {
-                // Validación de seguridad para evitar errores de strings vacíos
-                const nombreValido =
-                  cliente.nombre && cliente.nombre.trim() !== ""
-                    ? cliente.nombre
-                    : "Sin Nombre";
-                const inicial = nombreValido.charAt(0).toUpperCase();
+              {clientesFiltrados.length > 0 ? (
+                clientesFiltrados.map((cliente) => {
+                  const nombreValido =
+                    cliente.nombre && cliente.nombre.trim() !== ""
+                      ? cliente.nombre
+                      : "Sin Nombre";
+                  const inicial = nombreValido.charAt(0).toUpperCase();
 
-                return (
-                  <tr
-                    key={cliente.id}
-                    className="hover:bg-slate-50/80 transition-colors group"
-                  >
-                    {/* Nombre completo y Avatar */}
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 text-xs group-hover:bg-blue-100 group-hover:text-blue-500 transition-colors">
-                          {inicial}
+                  return (
+                    <tr
+                      key={cliente.id}
+                      className="hover:bg-slate-50/80 transition-colors group"
+                    >
+                      {/* Nombre completo y Avatar */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 text-xs group-hover:bg-blue-100 group-hover:text-blue-500 transition-colors">
+                            {inicial}
+                          </div>
+                          <span className="font-bold text-slate-700 capitalize">
+                            {nombreValido.toLowerCase()}
+                          </span>
                         </div>
-                        <span className="font-bold text-slate-700 capitalize">
-                          {nombreValido.toLowerCase()}
-                        </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Nacionalidad */}
-                    <td className="p-4 text-slate-600 uppercase text-xs font-bold">
-                      {cliente.nacionalidad ? (
-                        <span className="bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 border border-slate-200/50">
-                          {cliente.nacionalidad}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 italic font-normal text-[11px]">
-                          No especificado
-                        </span>
-                      )}
-                    </td>
+                      {/* Nacionalidad */}
+                      <td className="p-4 text-slate-600 uppercase text-xs font-bold">
+                        {cliente.nacionalidad ? (
+                          <span className="bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 border border-slate-200/50">
+                            {cliente.nacionalidad}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic font-normal text-[11px]">
+                            No especificado
+                          </span>
+                        )}
+                      </td>
 
-                    {/* Edad Dinámica */}
-                    <td className="p-4 text-slate-600 font-semibold text-sm">
-                      {calcularEdad(cliente.fecha_nacimiento)}
-                    </td>
-                    
+                      {/* Edad Dinámica */}
+                      <td className="p-4 text-slate-600 font-semibold text-sm">
+                        {calcularEdad(cliente.fecha_nacimiento)}
+                      </td>
 
-                       {/* fecha_nacimiento */}
-                  
-                    <td className="p-1 text-slate-400 uppercase text-xs font-bold">
-                      {cliente.fecha_nacimiento ? (
-                        <span className="bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 border border-slate-200/50">
-                          {cliente.fecha_nacimiento}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 italic font-normal text-[14px]">
-                          No especificado
-                        </span>
-                      )}
-                    </td>
-                    
-                         {/* ESTADO CIVIL */}
-                    <td className="p-4 text-slate-600 font-medium capitalize">
-                      {cliente.estado_civil ? (
-                        cliente.estado_civil.toLowerCase()
-                      ) : (
-                        <span className="text-slate-300">---</span>
-                      )}
-                    </td>
+                      {/* Fecha Nacimiento */}
+                      <td className="p-1 text-slate-400 uppercase text-xs font-bold">
+                        {cliente.fecha_nacimiento ? (
+                          <span className="bg-slate-100 px-2.5 py-1 rounded-md text-slate-700 border border-slate-200/50">
+                            {cliente.fecha_nacimiento}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic font-normal text-[14px]">
+                            No especificado
+                          </span>
+                        )}
+                      </td>
+                      
+                      {/* Estado Civil */}
+                      <td className="p-4 text-slate-600 font-medium capitalize">
+                        {cliente.estado_civil ? (
+                          cliente.estado_civil.toLowerCase()
+                        ) : (
+                          <span className="text-slate-300">---</span>
+                        )}
+                      </td>
 
-                    {/* Profesión */}
-                    <td className="p-4 text-slate-600 font-medium capitalize">
-                      {cliente.profesion ? (
-                        cliente.profesion.toLowerCase()
-                      ) : (
-                        <span className="text-slate-300">---</span>
-                      )}
-                    </td>
+                      {/* Profesión */}
+                      <td className="p-4 text-slate-600 font-medium capitalize">
+                        {cliente.profesion ? (
+                          cliente.profesion.toLowerCase()
+                        ) : (
+                          <span className="text-slate-300">---</span>
+                        )}
+                      </td>
 
+                      {/* Documento */}
+                      <td className="p-4 text-slate-600 font-mono text-sm">
+                        {cliente.documento || "---"}
+                      </td>
 
-                    {/* Documento */}
-                    <td className="p-4 text-slate-600 font-mono text-sm">
-                      {cliente.documento || "---"}
-                    </td>
+                      {/* Celular */}
+                      <td className="p-4 text-slate-600 font-medium">
+                        {cliente.celular ? (
+                          <span className="flex items-center gap-1">
+                            📞 {cliente.celular}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">---</span>
+                        )}
+                      </td>
 
-                    {/* Celular */}
-                    <td className="p-4 text-slate-600 font-medium">
-                      {cliente.celular ? (
-                        <span className="flex items-center gap-1">
-                          📞 {cliente.celular}
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">---</span>
-                      )}
-                    </td>
-
-                    {/* Fecha de Creación */}
-                    <td className="p-4">
-                      <span className="text-[10px] font-black text-blue-500 uppercase bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">
-                        {cliente.created_at
-                          ? new Date(cliente.created_at).toLocaleDateString(
-                              "es-BO",
-                            )
-                          : "---"}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <span className="text-[10px] font-black text-blue-500 uppercase bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">
-                        {cliente.ultima_visita
-                          ? new Date(cliente.ultima_visita).toLocaleDateString(
-                              "es-BO",
-                            )
-                          : cliente.created_at
+                      {/* Fecha de Creación */}
+                      <td className="p-4">
+                        <span className="text-[10px] font-black text-blue-500 uppercase bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">
+                          {cliente.created_at
                             ? new Date(cliente.created_at).toLocaleDateString(
-                                "es-BO",
+                                "es-BO"
                               )
                             : "---"}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                        </span>
+                      </td>
+
+                      {/* Última Visita */}
+                      <td className="p-4">
+                        <span className="text-[10px] font-black text-blue-500 uppercase bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">
+                          {cliente.ultima_visita
+                            ? new Date(cliente.ultima_visita).toLocaleDateString(
+                                "es-BO"
+                              )
+                            : cliente.created_at
+                            ? new Date(cliente.created_at).toLocaleDateString(
+                                "es-BO"
+                              )
+                            : "---"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={10} className="text-center py-12 text-slate-400">
+                    <p className="text-lg font-bold">No se encontraron clientes</p>
+                    <p className="text-xs mt-1">Intenta buscar con otro nombre, documento o número de celular.</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
