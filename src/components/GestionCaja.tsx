@@ -93,6 +93,21 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
       );
     }
 
+    // Creamos el objeto con la "foto" exacta de lo que ocurrió en este turno
+    const snapshotDetalle = {
+      movimientos,
+      gastos,
+      ingresosExtra,
+      totales: {
+        inicial: Number(cajaActiva.monto_apertura),
+        ingresos: totalIngresos,
+        gastos: totalGastos,
+        efectivo: totalEfectivo,
+        qr: totalQR,
+        enCaja: totalEnCaja
+      }
+    };
+
     const { error } = await supabase
       .from("cajas")
       .update({
@@ -102,6 +117,7 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
         monto_qr: totalQR,
         monto_gastos: totalGastos,
         fecha_cierre: new Date().toISOString(),
+        detalle_snapshot: snapshotDetalle,
       })
       .eq("id", cajaActiva.id);
 
