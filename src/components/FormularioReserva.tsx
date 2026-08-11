@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { registrarReservaConAdelanto } from "@/services/reservaService";
 import { supabase } from "@/lib/supabase";
@@ -7,6 +8,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
   const [habitaciones, setHabitaciones] = useState<any[]>([]);
   const [todasLasReservas, setTodasLasReservas] = useState<any[]>([]);
   const [hospedajesActivos, setHospedajesActivos] = useState<any[]>([]);
+  const [usuarioActual, setUsuarioActual] = useState<string>("Administrador");
 
   const [formData, setFormData] = useState({
     huesped_nombre: "",
@@ -14,23 +16,51 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
     fecha_inicio: new Date().toISOString().split("T")[0],
     fecha_fin: "",
     hora_llegada: "14:00",
-    id_habitacion: "",
-    nro_habitacion: "",
+    ids_habitaciones: [] as string[],
     monto_adelanto: 0,
     tipo_pago: "efectivo",
   });
 
   const cargarDatos = async () => {
+    // Obtener sesión de Supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.user) {
+      let nombreEncontrado = "Administrador";
+
+      // 1. Intentar buscar en user_metadata
+      if (session.user.user_metadata?.nombre) {
+        nombreEncontrado = session.user.user_metadata.nombre;
+      } else if (session.user.email) {
+        nombreEncontrado = session.user.email;
+      }
+
+      // 2. Opcional: Buscar en una tabla de perfiles si manejas los nombres ahí
+      const { data: perfil } = await supabase
+        .from("usuarios") // Cambia por "profiles" si tu tabla se llama así
+        .select("nombre")
+        .eq("id", session.user.id)
+        .single();
+
+      if (perfil?.nombre) {
+        nombreEncontrado = perfil.nombre;
+      }
+
+      setUsuarioActual(nombreEncontrado);
+    }
+
     const { data: habs } = await supabase
       .from("habitaciones")
       .select("*")
       .order("numero");
     setHabitaciones(habs || []);
+    
     const { data: res } = await supabase
       .from("reservas")
       .select("*, habitaciones(id, numero)")
       .neq("estado", "cancelada");
     setTodasLasReservas(res || []);
+
     const { data: hosp } = await supabase
       .from("hospedajes")
       .select("*, habitaciones(id, numero)")
@@ -42,10 +72,36 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
     cargarDatos();
   }, []);
 
+  const cancelarReserva = async (reservaId: string) => {
+    if (!confirm("¿Estás seguro de que deseas cancelar esta reserva?")) {
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("reservas")
+        .update({ estado: "cancelada" })
+        .eq("id", reservaId)
+        .select();
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        alert("No se pudo actualizar. Verifica las políticas RLS de Supabase para la tabla reservas.");
+        return;
+      }
+
+      alert("Reserva cancelada exitosamente.");
+      await cargarDatos();
+    } catch (error) {
+      console.error("Error al cancelar la reserva:", error);
+      alert("Hubo un error al intentar cancelar la reserva.");
+    }
+  };
+
   const getEstadoHabitacion = (hab: any) => {
     const fechaSeleccionada = new Date(formData.fecha_inicio + "T00:00:00");
 
-    // 1. Admin o Alquiler (No disponible)
     if (hab.estado_actual === "admin" || hab.estado_actual === "alquiler")
       return {
         color: "bg-orange-500",
@@ -53,7 +109,6 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
         disponible: false,
       };
 
-    // 2. Ocupado
     const hosp = hospedajesActivos.find((h) => h.id_habitacion === hab.id);
     if (hosp) {
       const ingreso = new Date(hosp.fecha_ingreso);
@@ -63,7 +118,6 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
         return { color: "bg-red-500", label: "OCUPADO", disponible: false };
     }
 
-    // 3. Reservado
     const reserva = todasLasReservas.find(
       (r) =>
         r.id_habitacion === hab.id &&
@@ -76,36 +130,41 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
     return { color: "bg-green-500", label: "LIBRE", disponible: true };
   };
 
-  const seleccionarHabitacion = (hab: any) => {
+  const toggleSeleccionarHabitacion = (hab: any) => {
     const estado = getEstadoHabitacion(hab);
     if (!estado.disponible) {
       alert("Esta habitación no está disponible para reserva.");
       return;
     }
-    setFormData({
-      ...formData,
-      id_habitacion: hab.id,
-      nro_habitacion: String(hab.numero),
+
+    setFormData((prev) => {
+      const yaSeleccionada = prev.ids_habitaciones.includes(hab.id);
+      if (yaSeleccionada) {
+        return {
+          ...prev,
+          ids_habitaciones: prev.ids_habitaciones.filter((id) => id !== hab.id),
+        };
+      } else {
+        return {
+          ...prev,
+          ids_habitaciones: [...prev.ids_habitaciones, hab.id],
+        };
+      }
     });
   };
+
   const [cargando, setCargando] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 0. Bloqueo de doble clic
     if (cargando) return;
 
-    // 1. Validar selección de habitación
-    const habSeleccionada = habitaciones.find(
-      (h) => h.id === formData.id_habitacion,
-    );
-    if (!habSeleccionada) {
-      alert("Por favor, selecciona una habitación primero.");
+    if (formData.ids_habitaciones.length === 0) {
+      alert("Por favor, selecciona al menos una habitación.");
       return;
     }
 
-    // 2. Validación básica de fechas
     if (
       new Date(formData.fecha_inicio + "T00:00:00") >=
       new Date(formData.fecha_fin + "T00:00:00")
@@ -114,24 +173,18 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
       return;
     }
 
-    // 3. Cálculo de días según la regla de la 1:00 PM
     const inicio = new Date(formData.fecha_inicio + "T00:00:00");
     const fin = new Date(formData.fecha_fin + "T00:00:00");
 
-    // Calcular noches (diferencia matemática)
     const diffTime = fin.getTime() - inicio.getTime();
     const noches = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    // Obtener hora de llegada (ej: '14:00' -> 14)
     const horaLlegada = parseInt(formData.hora_llegada.split(":")[0]);
 
-    // Si llega antes de las 13:00 (1 pm), se suma un día extra
     let diasCobro = noches;
     if (horaLlegada < 13) {
       diasCobro += 1;
     }
 
-    // Asegurar mínimo 1 día de cobro
     const dias = Math.max(1, diasCobro);
 
     const horaFormateada =
@@ -141,32 +194,57 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
 
     setCargando(true);
     try {
-      // 4. Llamada al servicio centralizado
-      await registrarReservaConAdelanto(
-        { ...formData, hora_llegada: horaFormateada },
-        formData.monto_adelanto,
-        formData.tipo_pago,
-        habSeleccionada.precio_base,
-        dias, // Total de días calculado con la lógica de hora
-      );
+      const totalHabitaciones = formData.ids_habitaciones.length;
+      const adelantoTotal = formData.monto_adelanto;
 
-      // 5. Feedback y limpieza
-      alert("Reserva y movimiento de caja registrados exitosamente.");
+      const montoBaseEntero = Math.floor(adelantoTotal / totalHabitaciones);
+      let acumuladoAdelanto = 0;
 
-      // Resetear formulario
+      for (let i = 0; i < totalHabitaciones; i++) {
+        const idHab = formData.ids_habitaciones[i];
+        const habSeleccionada = habitaciones.find((h) => h.id === idHab);
+        if (!habSeleccionada) continue;
+
+        let adelantoEstaHab = montoBaseEntero;
+        if (i === totalHabitaciones - 1) {
+          adelantoEstaHab = adelantoTotal - acumuladoAdelanto;
+        } else {
+          acumuladoAdelanto += montoBaseEntero;
+        }
+
+        const datosReservaIndividual = {
+          huesped_nombre: formData.huesped_nombre,
+          huesped_telefono: formData.huesped_telefono,
+          fecha_inicio: formData.fecha_inicio,
+          fecha_fin: formData.fecha_fin,
+          hora_llegada: horaFormateada,
+          id_habitacion: idHab,
+          nro_habitacion: String(habSeleccionada.numero),
+          responsable: usuarioActual, // Garantiza enviar el nombre obtenido de la sesión
+        };
+
+        await registrarReservaConAdelanto(
+          datosReservaIndividual,
+          adelantoEstaHab,
+          formData.tipo_pago,
+          habSeleccionada.precio_base,
+          dias,
+        );
+      }
+
+      alert("Reservas y movimientos de caja registrados exitosamente.");
+
       setFormData({
         huesped_nombre: "",
         huesped_telefono: "",
         fecha_inicio: new Date().toISOString().split("T")[0],
         fecha_fin: "",
         hora_llegada: "14:00",
-        id_habitacion: "",
-        nro_habitacion: "",
+        ids_habitaciones: [],
         monto_adelanto: 0,
         tipo_pago: "efectivo",
       });
 
-      // 6. Recargar datos
       await cargarDatos();
     } catch (error: any) {
       console.error("Error al registrar reserva:", error);
@@ -178,6 +256,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
       setCargando(false);
     }
   };
+
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <button
@@ -190,7 +269,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
         Sistema de Reservas
       </h2>
 
-      <div className="bg-blue-50 p-6 rounded-3xl border border-blue-200 ">
+      <div className="bg-blue-50 p-6 rounded-3xl border border-blue-200">
         <label className="text-blue-800 font-bold text-sm">
           FECHA DE CONSULTA:
         </label>
@@ -204,10 +283,8 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
         />
       </div>
 
-      {/* CONTENEDOR PRINCIPAL: Mapa y Formulario lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-        {/* Lado izquierdo: Mapa de habitaciones */}
-        <div className=" md:col-span-2 space-y-4">
+        <div className="md:col-span-2 space-y-4">
           <div className="bg-slate-800 p-4 rounded-xl text-white grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] font-bold uppercase">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-violet-500 rounded"></div> Reservada
@@ -222,19 +299,24 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
               <div className="w-3 h-3 bg-green-500 rounded"></div> Libre
             </div>
           </div>
-          <div className="bg-blue-100 p-6 rounded-3xl border border-blue-400 grid grid-cols-4 md:grid-cols-6 gap-3 ">
+          <div className="bg-blue-100 p-6 rounded-3xl border border-blue-400 grid grid-cols-4 md:grid-cols-6 gap-3">
             {habitaciones.map((h) => {
               const estado = getEstadoHabitacion(h);
+              const estaSeleccionada = formData.ids_habitaciones.includes(h.id);
               return (
                 <button
                   key={h.id}
                   type="button"
-                  onClick={() => seleccionarHabitacion(h)}
-                  className={`${estado.color} p-3 text-white rounded-xl flex flex-col items-center transition-all ${formData.id_habitacion === h.id ? "ring-4 ring-blue-900 scale-105" : "hover:scale-105"}`}
+                  onClick={() => toggleSeleccionarHabitacion(h)}
+                  className={`${estado.color} p-3 text-white rounded-xl flex flex-col items-center transition-all ${
+                    estaSeleccionada
+                      ? "ring-4 ring-blue-900 scale-105 shadow-lg brightness-110"
+                      : "hover:scale-105"
+                  }`}
                 >
                   <span className="font-black text-sm">#{h.numero}</span>
                   <span className="text-[8px] bg-black/20 px-1 rounded mt-1 truncate w-full">
-                    {estado.label}
+                    {estaSeleccionada ? "SELECCIONADA" : estado.label}
                   </span>
                 </button>
               );
@@ -242,17 +324,16 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
           </div>
         </div>
 
-        {/* Lado derecho: Formulario */}
         <form
           onSubmit={handleSubmit}
           className="bg-blue-100 p-6 rounded-3xl border border-blue-400 shadow-lg space-y-4"
         >
-          <h3 className="font-black text-slate-700 uppercase text-sx mb-2">
-            Nueva Reserva
+          <h3 className="font-black text-slate-700 uppercase text-xs mb-2">
+            Nueva Reserva ({formData.ids_habitaciones.length} hab. seleccionadas)
           </h3>
           <div className="grid grid-cols-1 gap-4 text-[14px]">
             <input
-              className="p-3 border  rounded-xl"
+              className="p-3 border rounded-xl"
               placeholder="Huésped"
               required
               value={formData.huesped_nombre}
@@ -301,6 +382,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
             <div className="grid grid-cols-2 gap-4">
               <select
                 className="p-3 border rounded-xl"
+                value={formData.tipo_pago}
                 onChange={(e) =>
                   setFormData({ ...formData, tipo_pago: e.target.value })
                 }
@@ -311,11 +393,12 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
               <input
                 type="number"
                 className="p-3 border rounded-xl"
-                placeholder="Adelanto Bs."
+                placeholder="Adelanto Total Bs."
+                value={formData.monto_adelanto || ""}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    monto_adelanto: parseFloat(e.target.value) || 0,
+                    monto_adelanto: parseInt(e.target.value) || 0,
                   })
                 }
               />
@@ -330,7 +413,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
                 : "bg-blue-600 text-white"
             }`}
           >
-            {cargando ? "Registrando..." : "Confirmar Reserva"}
+            {cargando ? "Registrando..." : "Confirmar Reservas"}
           </button>
         </form>
       </div>
@@ -349,6 +432,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
               <th className="pb-3 text-left">hora de entrada</th>
               <th className="pb-3 text-left">Monto</th>
               <th className="pb-3 text-center">estado</th>
+              <th className="pb-3 text-center">acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -362,7 +446,15 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
                 <td className="p-3 text-left">{r.fecha_fin}</td>
                 <td className="p-3 text-left">{r.hora_llegada}</td>
                 <td className="p-3 text-left">{r.monto_adelanto}</td>
-                <td className="p-3 text-center text-blue-600">{r.estado}</td>
+                <td className="p-3 text-center text-blue-600 uppercase font-bold text-xs">{r.estado}</td>
+                <td className="p-3 text-center">
+                  <button
+                    onClick={() => cancelarReserva(r.id)}
+                    className="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white px-3 py-1.5 rounded-xl font-black text-[10px] uppercase transition-all shadow-sm"
+                  >
+                    Cancelar
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
