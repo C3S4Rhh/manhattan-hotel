@@ -158,8 +158,8 @@ export function HistorialCajas() {
 
                   <td className={`py-4 px-4 font-bold ${estaOculto ? 'text-red-700' : 'text-slate-700'}`}>{caja.nombreOperador}</td>
                   <td className="py-4 px-2">
-                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${estaOculto ? 'bg-red-100 text-red-700' : (caja.monto_cierre ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-600')}`}>
-                      {estaOculto ? 'Oculto / Sumado' : (caja.monto_cierre ? 'Cerrada' : 'Abierta')}
+                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${estaOculto ? 'bg-red-100 text-red-700' : (caja.fecha_cierre ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-600')}`}>
+                      {estaOculto ? 'Oculto / Sumado' : (caja.fecha_cierre ? 'Cerrada' : 'Abierta')}
                     </span>
                   </td>
                   <td className={`py-4 px-2 text-xs ${estaOculto ? 'text-red-600/70' : 'text-slate-500'}`}>{new Date(caja.fecha_apertura).toLocaleString()}</td>
@@ -169,7 +169,7 @@ export function HistorialCajas() {
                   <td className="py-4 px-2 text-right font-bold">{Number(caja.monto_efectivo || 0).toFixed(2)} Bs.</td>
                   <td className="py-4 px-2 text-right font-bold">{Number(caja.monto_qr || 0).toFixed(2)} Bs.</td>
                   <td className={`py-4 px-2 text-right font-black ${estaOculto ? 'text-red-900' : 'text-slate-800'}`}>{(Number(caja.monto_apertura || 0) + Number(caja.monto_efectivo || 0)).toFixed(2)} Bs.</td>
-                  <td className={`py-4 px-2 text-right font-black ${estaOculto ? 'text-red-700' : 'text-emerald-600'}`}>{caja.monto_cierre ? `${Number(caja.monto_cierre).toFixed(2)} Bs.` : '0'}</td>
+                  <td className={`py-4 px-2 text-right font-black ${estaOculto ? 'text-red-700' : 'text-emerald-600'}`}>{caja.monto_cierre ? `${Number(caja.monto_cierre).toFixed(2)} Bs.` : (caja.fecha_cierre ? 'Cerrada sin monto' : '0')}</td>
                 </tr>
               );
             })}
