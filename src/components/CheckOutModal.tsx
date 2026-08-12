@@ -24,6 +24,10 @@ export function CheckOutModal({
   const [tiempoRestante, setTiempoRestante] = useState<string>("");
   const [estaAtrasado, setEstaAtrasado] = useState<boolean>(false);
   const [abiertoConfirmarSalida, setAbiertoConfirmarSalida] = useState(false);
+  
+  // Estado local para la justificación del descuento
+  const [justificacionDescuento, setJustificacionDescuento] = useState("");
+
   const {
     registro,
     huespedesDetalle,
@@ -40,92 +44,114 @@ export function CheckOutModal({
     registrarPagoParcial,
   } = useCheckOut(hab, onSuccess);
 
-
-  
-     // inicio cronometro
-useEffect(() => {
-  const calcularTiempo = () => {
-    if (!registro?.fecha_ingreso) return;
-
-    // 1. Parseo manual para evitar desfase de zona horaria
-    const [fechaParte, horaParte] = registro.fecha_ingreso.split("T");
-    const [year, month, day] = fechaParte.split("-").map(Number);
-    const [hours, minutes] = horaParte.split(":").map(Number);
-    
-    const fechaIngreso = new Date(year, month - 1, day, hours, minutes);
-    const ahora = new Date();
-
-    // 2. Definir salida: 13:00 del mismo día
-    const fechaSalida = new Date(year, month - 1, day, 13, 0, 0);
-
-    if (hours < 5) {
-  // Entró antes de las 5am: Se cuenta el día actual. No hacemos nada, fechaSalida base es hoy a las 13:00.
-} else if (hours >= 5 && hours < 13) {
-  // Entró en horario de cortesía: La salida final se desplaza 1 día adicional.
-  fechaSalida.setDate(fechaSalida.getDate() + 1);
-} else {
-  // Entró después de las 13:00: La salida base es mañana a las 13:00.
-  fechaSalida.setDate(fechaSalida.getDate() + 1);
-}
-
-    // 4. Sumar días totales:
-    // Se toma la cantidad contratada (si es 2, sumamos 1 día extra a la base) + días extra manuales
-    const diasContratados = Number(registro?.cantidad_dias) || 1;
-    const totalDiasASumar = (diasContratados - 1) + (Number(diasExtra) || 0);
-    
-    fechaSalida.setDate(fechaSalida.getDate() + totalDiasASumar);
-
-    // 5. Cálculo de diferencia
-    const diferencia = fechaSalida.getTime() - ahora.getTime();
-
-    // 6. Actualización de estado
-    if (diferencia <= 0) {
-      setEstaAtrasado(true);
-      const excedido = Math.abs(diferencia);
-      const horas = Math.floor(excedido / (1000 * 60 * 60));
-      const minutos = Math.floor((excedido % (1000 * 60 * 60)) / (1000 * 60));
-      setTiempoRestante(`+${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}`);
-    } else {
-      setEstaAtrasado(false);
-      const horas = Math.floor(diferencia / (1000 * 60 * 60));
-      const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
-      const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
-      setTiempoRestante(
-        `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`
-      );
+  // Sincronizar y limpiar el texto guardado para dejar solo la justificación en el input
+  useEffect(() => {
+    if (registro) {
+      setDatosHospedaje(registro);
+      const obsBD = registro.observaciones_descuento || registro.observaciones || registro.observacion || "";
+      
+      if (obsBD) {
+        // Si el texto incluye el formato automático del monto, lo separamos para mostrar solo el texto limpio en el input
+        const partes = obsBD.split(" - Descuento:");
+        setJustificacionDescuento(partes[0].trim());
+      }
     }
-  };
+  }, [registro]);
 
-  calcularTiempo();
-  const timer = setInterval(calcularTiempo, 1000);
-  
-  return () => clearInterval(timer);
-}, [registro?.fecha_ingreso, diasExtra, registro?.cantidad_dias]); 
+  // inicio cronometro
+  useEffect(() => {
+    const calcularTiempo = () => {
+      if (!registro?.fecha_ingreso) return;
 
+      const [fechaParte, horaParte] = registro.fecha_ingreso.split("T");
+      const [year, month, day] = fechaParte.split("-").map(Number);
+      const [hours, minutes] = horaParte.split(":").map(Number);
+
+      const fechaIngreso = new Date(year, month - 1, day, hours, minutes);
+      const ahora = new Date();
+      const fechaSalida = new Date(year, month - 1, day, 13, 0, 0);
+
+      if (hours >= 5 && hours < 13) {
+        fechaSalida.setDate(fechaSalida.getDate() + 1);
+      } else if (hours >= 13) {
+        fechaSalida.setDate(fechaSalida.getDate() + 1);
+      }
+
+      const diasContratados = Number(registro?.cantidad_dias) || 1;
+      const totalDiasASumar = diasContratados - 1 + (Number(diasExtra) || 0);
+      fechaSalida.setDate(fechaSalida.getDate() + totalDiasASumar);
+
+      const diferencia = fechaSalida.getTime() - ahora.getTime();
+
+      if (diferencia <= 0) {
+        setEstaAtrasado(true);
+        const excedido = Math.abs(diferencia);
+        const horas = Math.floor(excedido / (1000 * 60 * 60));
+        const minutos = Math.floor((excedido % (1000 * 60 * 60)) / (1000 * 60));
+        setTiempoRestante(
+          `+${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}`,
+        );
+      } else {
+        setEstaAtrasado(false);
+        const horas = Math.floor(diferencia / (1000 * 60 * 60));
+        const minutos = Math.floor(
+          (diferencia % (1000 * 60 * 60)) / (1000 * 60),
+        );
+        const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+        setTiempoRestante(
+          `${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}:${segundos.toString().padStart(2, "0")}`,
+        );
+      }
+    };
+
+    calcularTiempo();
+    const timer = setInterval(calcularTiempo, 1000);
+    return () => clearInterval(timer);
+  }, [registro?.fecha_ingreso, diasExtra, registro?.cantidad_dias]);
   //fin cronometro
 
+  // Guardar ajustes de días extra, descuento y su justificación unida al monto en tiempo real
   useEffect(() => {
     const guardarAjustes = async () => {
       if (!registro?.id) return;
+
+      let textoObservacion = justificacionDescuento;
+      if (descuentoMonto > 0) {
+        textoObservacion = `${justificacionDescuento ? justificacionDescuento + " - " : ""}Descuento: ${descuentoMonto} Bs.`;
+      }
 
       await supabase
         .from("hospedajes")
         .update({
           medios_dias_extra: diasExtra,
           descuento_monto: descuentoMonto,
+          observaciones: textoObservacion,
         })
         .eq("id", registro.id);
     };
 
-    const timer = setTimeout(guardarAjustes, 500);
+    const timer = setTimeout(guardarAjustes, 300);
     return () => clearTimeout(timer);
-  }, [diasExtra, descuentoMonto, registro?.id]);
+  }, [diasExtra, descuentoMonto, justificacionDescuento, registro?.id]);
 
-  useEffect(() => {
-    if (registro) {
-      setDatosHospedaje(registro);
+  // Función para manejar el botón Volver asegurando que guarde antes de cerrar
+  const handleVolver = async () => {
+    if (registro?.id) {
+      let textoObservacion = justificacionDescuento;
+      if (descuentoMonto > 0) {
+        textoObservacion = `${justificacionDescuento ? justificacionDescuento + " - " : ""}Descuento: - ${descuentoMonto} Bs.`;
+      }
+      await supabase
+        .from("hospedajes")
+        .update({
+          medios_dias_extra: diasExtra,
+          descuento_monto: descuentoMonto,
+          observaciones: textoObservacion,
+        })
+        .eq("id", registro.id);
     }
-  }, [registro]);
+    onClose();
+  };
 
   if (cargando) return null;
 
@@ -203,8 +229,6 @@ useEffect(() => {
     }
   };
 
-  // Agrega esto dentro de tu componente CheckOutModal
-
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -222,40 +246,41 @@ useEffect(() => {
         </div>
 
         <div className="p-8 space-y-6 overflow-y-auto">
-           
-         <div className="grid grid-cols-3 gap-3">
-  {/* Cronómetro (ocupa 2 columnas) */}
-  <div
-    className={`col-span-2 p-3 rounded-xl border text-center ${
-      estaAtrasado ? "bg-red-50 border-red-200" : "bg-slate-900 border-slate-700"
-    }`}
-  >
-    <p
-      className={`text-[9px] font-black uppercase tracking-widest ${
-        estaAtrasado ? "text-red-500" : "text-blue-400"
-      }`}
-    >
-      {estaAtrasado ? "Tiempo excedido" : "Tiempo para Salida"}
-    </p>
-    <p
-      className={`text-2xl font-black font-mono mt-1 ${
-        estaAtrasado ? "text-red-600" : "text-white"
-      }`}
-    >
-      {tiempoRestante}
-    </p>
-  </div>
+          <div className="grid grid-cols-3 gap-3">
+            {/* Cronómetro */}
+            <div
+              className={`col-span-2 p-3 rounded-xl border text-center ${
+                estaAtrasado
+                  ? "bg-red-50 border-red-200"
+                  : "bg-slate-900 border-slate-700"
+              }`}
+            >
+              <p
+                className={`text-[9px] font-black uppercase tracking-widest ${
+                  estaAtrasado ? "text-red-500" : "text-blue-400"
+                }`}
+              >
+                {estaAtrasado ? "Tiempo excedido" : "Tiempo para Salida"}
+              </p>
+              <p
+                className={`text-2xl font-black font-mono mt-1 ${
+                  estaAtrasado ? "text-red-600" : "text-white"
+                }`}
+              >
+                {tiempoRestante}
+              </p>
+            </div>
 
-  {/* Días Contratados (ocupa 1 columna) */}
-  <div className="col-span-1 flex flex-col justify-center items-center bg-blue-50 border border-blue-700 rounded-xl p-2 text-center">
-    <p className="text-[7px] font-black text-blue-600 uppercase">
-      Días
-    </p>
-    <p className="text-xl font-black text-blue-700">
-      {registro?.cantidad_dias || 0}
-    </p>
-  </div>
-</div>
+            {/* Días Contratados */}
+            <div className="col-span-1 flex flex-col justify-center items-center bg-blue-50 border border-blue-700 rounded-xl p-2 text-center">
+              <p className="text-[7px] font-black text-blue-600 uppercase">
+                Días
+              </p>
+              <p className="text-xl font-black text-blue-700">
+                {registro?.cantidad_dias || 0}
+              </p>
+            </div>
+          </div>
 
           <div className="space-y-3">
             <p className="text-[10px] font-black text-slate-400 uppercase ml-1">
@@ -306,6 +331,7 @@ useEffect(() => {
             </button>
           </div>
 
+          {/* Controles de Días Extra y Descuento */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div>
@@ -338,6 +364,22 @@ useEffect(() => {
                 />
               </div>
             </div>
+
+            {/* Input para justificar el descuento */}
+            {descuentoMonto > 0 && (
+              <div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200 space-y-1 animate-fadeIn">
+                <label className="text-[9px] font-black text-amber-700 uppercase ml-1">
+                  Justificación del descuento
+                </label>
+                <textarea
+                  rows={2}
+                  value={justificacionDescuento}
+                  onChange={(e) => setJustificacionDescuento(e.target.value)}
+                  placeholder="Ej: Descuento por cortesía gerencial, cliente frecuente, etc."
+                  className="w-full p-2 text-xs rounded-lg border border-amber-300 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 text-slate-700 font-medium"
+                />
+              </div>
+            )}
           </div>
 
           <div className="bg-slate-900 p-4 rounded-2xl space-y-2 text-white">
@@ -417,7 +459,7 @@ useEffect(() => {
               {procesando ? "Procesando..." : "Finalizar Estancia Total"}
             </button>
             <button
-              onClick={onClose}
+              onClick={handleVolver}
               type="button"
               className="text-slate-400 font-bold text-[10px] uppercase tracking-widest py-2 text-center"
             >
@@ -426,6 +468,7 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
       {abiertoCambio && (
         <CambioHabitacionModal
           hab={hab}
@@ -436,32 +479,35 @@ useEffect(() => {
       )}
 
       {abiertoConfirmarSalida && (
-  <div className="fixed inset-0 bg-slate-900/50 z-[200] flex items-center justify-center p-4">
-    <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
-      <h3 className="text-lg font-black text-slate-800 mb-2">¿Finalizar estancia?</h3>
-      <p className="text-sm text-slate-600 mb-6">
-        Esta acción marcará la habitación como disponible y finalizará el registro. ¿Estás seguro de continuar?
-      </p>
-      <div className="flex gap-3">
-        <button
-          onClick={() => setAbiertoConfirmarSalida(false)}
-          className="flex-1 py-2 rounded-lg bg-slate-100 font-bold text-slate-600"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={() => {
-            setAbiertoConfirmarSalida(false);
-            realizarSalidaTotal();
-          }}
-          className="flex-1 py-2 rounded-lg bg-emerald-600 font-bold text-white"
-        >
-          Confirmar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="fixed inset-0 bg-slate-900/50 z-[200] flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+            <h3 className="text-lg font-black text-slate-800 mb-2">
+              ¿Finalizar estancia?
+            </h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Esta acción marcará la habitación como disponible y finalizará el
+              registro. ¿Estás seguro de continuar?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setAbiertoConfirmarSalida(false)}
+                className="flex-1 py-2 rounded-lg bg-slate-100 font-bold text-slate-600"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setAbiertoConfirmarSalida(false);
+                  realizarSalidaTotal();
+                }}
+                className="flex-1 py-2 rounded-lg bg-emerald-600 font-bold text-white"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
