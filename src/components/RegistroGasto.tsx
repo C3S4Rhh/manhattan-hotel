@@ -63,7 +63,7 @@ export function RegistroGasto({ onExito }: { onExito: () => void }) {
         
         <input 
           name="monto" 
-          type="number" 
+          type="decimal" 
           step="0.01" 
           placeholder="Monto (Bs.)" 
           className="p-2 border rounded-lg outline-none focus:border-blue-500" 
