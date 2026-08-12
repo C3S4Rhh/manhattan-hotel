@@ -30,12 +30,18 @@ export function useCaja(usuarioActivo: any) {
       setLoading(false)
     }
   }, [])
-
-  // 2. Cargar los movimientos de la sesión de caja actual (Soluciona el error de columna inexistente)
+  // 2. Cargar los movimientos del turno o del día actual
   const cargarMovimientos = async (sesionId: string) => {
     try {
-      // Traemos todos los campos planos (incluyendo nro_habitacion directo de caja_movimientos)
-      // y hacemos el join seguro usando la llave foránea id_habitacion
+    
+      const { data: sesionData } = await supabase
+        .from('caja_sesiones')
+        .select('fecha_apertura')
+        .eq('id', sesionId)
+        .single();
+
+      const fechaApertura = sesionData?.fecha_apertura || new Date().toISOString().split('T')[0];
+
       const { data, error } = await supabase
         .from('caja_movimientos')
         .select(`
@@ -51,6 +57,8 @@ export function useCaja(usuarioActivo: any) {
           monto_total,
           monto_a_cuenta,
           monto_saldo,
+          monto_efectivo,
+          monto_qr,
           factura_numero,
           huesped_referencia,
           observaciones,
@@ -59,13 +67,13 @@ export function useCaja(usuarioActivo: any) {
             estado_actual
           ),usuarios:id_usuario(nombre)
         `)
-        .eq('id_sesion', sesionId)
-        .order('fecha', { ascending: false })
+        .gte('fecha', fechaApertura) 
+        .order('fecha', { ascending: false });
 
-      if (error) throw error
-      setMovimientos(data || [])
+      if (error) throw error;
+      setMovimientos(data || []);
     } catch (error) {
-      console.error('Error al cargar movimientos de caja:', error)
+      console.error('Error al cargar movimientos de caja:', error);
     }
   };
 
