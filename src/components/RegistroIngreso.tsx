@@ -42,7 +42,7 @@ export function RegistroIngreso({ onExito, usuario }: { onExito: () => void, usu
         <option>Otros</option>
       </select>
       
-      <input name="monto" type="number" placeholder="Monto Bs." className="w-full p-2 bg-slate-50 rounded-xl" required />
+      <input name="monto" type="decimal" placeholder="Monto Bs." className="w-full p-2 bg-slate-50 rounded-xl" required />
       {/* Selector añadido */}
       <select name="tipo_pago" className="w-full p-2 bg-slate-50 rounded-xl" required>
         <option value="efectivo">Efectivo</option>
