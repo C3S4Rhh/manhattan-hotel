@@ -258,7 +258,7 @@ export default function Home() {
             >
               ← Volver a Finanzas
             </button>
-            <GestionEgresos />
+            <GestionEgresos usuarioActual={usuarioActivo} />
           </div>
         )}
         {/* 4. VISTA: GESTIÓN DE INGRESOS EXTRAS */}
