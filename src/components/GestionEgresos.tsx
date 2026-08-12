@@ -5,7 +5,7 @@ import { TotalGastos } from "./TotalGastos";
 import { TablaGastos } from "./TablaGastos";
 import { obtenerGastosPorRango } from "@/services/gastosService";
 
-export function GestionEgresos() {
+export function GestionEgresos({ usuarioActual }: { usuarioActual?: any }) {
   const [refresh, setRefresh] = useState(0);
   const [gastos, setGastos] = useState<any[]>([]);
   const [gastosAnuales, setGastosAnuales] = useState<any[]>([]);
@@ -101,9 +101,15 @@ export function GestionEgresos() {
               Periodo: {fechaInicio} al {fechaFin}
             </p>
           </div>
-          <TablaGastos gastos={gastos} />
+          
+          {/* Pasamos usuarioActual y la función para actualizar datos al eliminar */}
+          <TablaGastos 
+            gastos={gastos} 
+            usuarioActual={usuarioActual} 
+            onEliminado={() => setRefresh((prev) => prev + 1)} 
+          />
+
           <div className="hidden print:block mb-8 text-center">
-            {/* Contenedor Padre con flex */}
             <div className="flex justify-end">
               <div className="mt-4 p-4 bg-slate-100 rounded-2xl border border-slate-200">
                 <p className="text-xs font-black uppercase text-slate-500">
