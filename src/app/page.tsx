@@ -281,12 +281,12 @@ export default function Home() {
             <button
               onClick={() => setVista("finanzas")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] ml-8 mt-8"
-            >
-              ← Volver a Finanzas
+             >
+            ← Volver a Finanzas
             </button>
-            <GestionIngresosHabitaciones />
+          <GestionIngresosHabitaciones usuarioActual={usuarioActivo} />
           </div>
-        )}
+         )}
         {/* 5. VISTA: CAJA CHICA */}
         {vista === "cajachica" && (
           <div className="min-h-screen w-full bg-slate-50 p-6 md:p-12 animate-in fade-in duration-500">
