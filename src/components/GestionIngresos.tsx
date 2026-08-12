@@ -1,14 +1,13 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { RegistroIngreso } from "./RegistroIngreso";
 import { TablaIngresos } from "./TablaIngresos";
 import { obtenerIngresosPorRango } from "@/services/ingresosService";
 
-
 export function GestionIngresos({ usuario }: { usuario: any }) {
-  
   console.log("¿Qué llega en usuario?:", usuario); // <--- REVISA LA CONSOLA DEL NAVEGADOR
-  // ... resto del código
+  
   const [refresh, setRefresh] = useState(0);
   const [ingresos, setIngresos] = useState<any[]>([]);
   const [ingresosAnuales, setIngresosAnuales] = useState<any[]>([]);
@@ -98,12 +97,18 @@ export function GestionIngresos({ usuario }: { usuario: any }) {
         </div>
 
         {/* Área de Impresión */}
-        <div className="printable-area">
+        <div className="printable-area bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <div className="hidden print:block mb-8 text-center">
             <h1 className="text-4xl font-black text-slate-900 uppercase">Informe de Ingresos</h1>
             <p className="text-slate-500 font-bold">Periodo: {fechaInicio} al {fechaFin}</p>
           </div>
-          <TablaIngresos ingresos={ingresos} />
+          
+          {/* Pasamos 'usuario' y la función 'onEliminado' para refrescar los datos automáticamente al borrar */}
+          <TablaIngresos 
+            ingresos={ingresos} 
+            usuarioActual={usuario} 
+            onEliminado={() => setRefresh((prev) => prev + 1)} 
+          />
           
           <div className="hidden print:block mb-8 text-center">
             <div className="flex justify-end">
