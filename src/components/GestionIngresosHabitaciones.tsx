@@ -1,9 +1,13 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { obtenerMovimientosHabitaciones } from "@/services/cajaService";
+import { supabase } from "@/lib/supabase";
 
-export function GestionIngresosHabitaciones() {
+export function GestionIngresosHabitaciones({ usuarioActual }: { usuarioActual?: any }) {
   const [datos, setDatos] = useState<any[]>([]);
+  const [cargandoId, setCargandoId] = useState<string | null>(null);
+  
   // Inicializamos los totales incluyendo mensual y anual
   const [totales, setTotales] = useState({
     gastos: 0,
@@ -38,10 +42,38 @@ export function GestionIngresosHabitaciones() {
   useEffect(() => {
     cargarDatos();
   }, [fechaInicio, fechaFin]);
+
+  const eliminarMovimiento = async (id: string) => {
+    if (usuarioActual?.rol !== 'administrador') {
+      return alert("Solo los administradores pueden eliminar registros.");
+    }
+
+    if (!confirm("¿Estás seguro de que deseas eliminar este registro de habitación?")) {
+      return;
+    }
+
+    setCargandoId(id);
+
+    // Ajusta el nombre de la tabla si es distinto en tu base de datos (ej: 'movimientos_habitaciones', 'caja', etc.)
+    const { error } = await supabase
+      .from('movimientos_habitaciones') 
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error al eliminar el registro:", error);
+      alert("No se pudo eliminar el registro.");
+    } else {
+      await cargarDatos();
+    }
+    setCargandoId(null);
+  };
+
   const datosVisibles = datos.filter((d) => {
     const fechaRegistro = d.fecha.split("T")[0];
     return fechaRegistro >= fechaInicio && fechaRegistro <= fechaFin;
   });
+  
   const totalHabitaciones = datosVisibles.reduce(
     (sum, d) => sum + parseFloat(d.monto_total || 0),
     0,
@@ -136,39 +168,39 @@ export function GestionIngresosHabitaciones() {
       {/* Área de Impresión */}
       <div className="printable-area">
         <div className="hidden print:block mb-8">
-    {/* Encabezado del reporte */}
-    <div className="text-center mb-8">
-      <h1 className="text-3xl font-black uppercase text-blue-900">
-        Reporte de Ingresos por Habitaciones
-      </h1>
-      <p className="font-bold text-slate-500 text-sm">
-        Periodo: {fechaInicio.split('-').reverse().join('/')} al {fechaFin.split('-').reverse().join('/')}
-      </p>
-    </div>
+          {/* Encabezado del reporte */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-black uppercase text-blue-900">
+              Reporte de Ingresos por Habitaciones
+            </h1>
+            <p className="font-bold text-slate-500 text-sm">
+              Periodo: {fechaInicio.split('-').reverse().join('/')} al {fechaFin.split('-').reverse().join('/')}
+            </p>
+          </div>
 
-    {/* Grid de 4 tarjetas para los datos */}
-    <div className="grid grid-cols-4 gap-4 mb-8">
-      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center">
-        <p className="text-[9px] font-black uppercase text-slate-400">Habitaciones</p>
-        <h2 className="text-lg font-black text-slate-700">{totalHabitaciones.toFixed(2)} Bs</h2>
-      </div>
+          {/* Grid de 4 tarjetas para los datos */}
+          <div className="grid grid-cols-4 gap-4 mb-8">
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center">
+              <p className="text-[9px] font-black uppercase text-slate-400">Habitaciones</p>
+              <h2 className="text-lg font-black text-slate-700">{totalHabitaciones.toFixed(2)} Bs</h2>
+            </div>
 
-      <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-center">
-        <p className="text-[9px] font-black uppercase text-emerald-600">Ingresos Extra</p>
-        <h2 className="text-lg font-black text-emerald-800">{totales.ingresosExtra.toFixed(2)} Bs</h2>
-      </div>
+            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-center">
+              <p className="text-[9px] font-black uppercase text-emerald-600">Ingresos Extra</p>
+              <h2 className="text-lg font-black text-emerald-800">{totales.ingresosExtra.toFixed(2)} Bs</h2>
+            </div>
 
-      <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200 text-center">
-        <p className="text-[9px] font-black uppercase text-rose-600">Total Egresos</p>
-        <h2 className="text-lg font-black text-rose-800">{totales.gastos.toFixed(2)} Bs</h2>
-      </div>
+            <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200 text-center">
+              <p className="text-[9px] font-black uppercase text-rose-600">Total Egresos</p>
+              <h2 className="text-lg font-black text-rose-800">{totales.gastos.toFixed(2)} Bs</h2>
+            </div>
 
-      <div className="p-4 bg-blue-50 rounded-2xl border-2 border-blue-500 text-center">
-        <p className="text-[9px] font-black uppercase text-blue-700">Recaudado Final</p>
-        <h2 className="text-lg font-black text-blue-900">{balanceNeto.toFixed(2)} Bs</h2>
-      </div>
-    </div>
-  </div>
+            <div className="p-4 bg-blue-50 rounded-2xl border-2 border-blue-500 text-center">
+              <p className="text-[9px] font-black uppercase text-blue-700">Recaudado Final</p>
+              <h2 className="text-lg font-black text-blue-900">{balanceNeto.toFixed(2)} Bs</h2>
+            </div>
+          </div>
+        </div>
 
         <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
           <table className="w-full text-left">
@@ -182,12 +214,13 @@ export function GestionIngresosHabitaciones() {
                 <th className="p-4 text-right">QR</th>
                 <th className="p-4 text-right">Total</th>
                 <th className="p-4 text-left">Observaciones</th>
+                {usuarioActual?.rol === 'administrador' && <th className="p-4 text-center no-print">Acción</th>}
               </tr>
             </thead>
             <tbody>
               {datosVisibles.map((d) => (
                 <tr key={d.id} className="border-b hover:bg-slate-50">
-                  <td className="p-4 text-xs font-medium text-slate-500">
+                  <td className="p-4 text-xs font-medium text-slate-500 text-right">
                     <span className="block font-bold text-slate-700">
                       {d.fecha.split("T")[0].split("-").reverse().join("/")}
                     </span>
@@ -209,6 +242,17 @@ export function GestionIngresosHabitaciones() {
                     +{parseFloat(d.monto_total || 0).toFixed(2)}
                   </td>
                   <td className="p-4 text-slate-700">{d.observaciones}</td>
+                  {usuarioActual?.rol === 'administrador' && (
+                    <td className="p-4 text-center no-print">
+                      <button
+                        onClick={() => eliminarMovimiento(d.id)}
+                        disabled={cargandoId === d.id}
+                        className="text-rose-400 hover:text-rose-600 font-bold text-[10px] uppercase transition-colors disabled:opacity-50"
+                      >
+                        {cargandoId === d.id ? 'Eliminando...' : 'Eliminar'}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
