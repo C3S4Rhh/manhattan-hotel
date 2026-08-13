@@ -44,7 +44,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     );
   }
 
-  // 1. INTERFAZ: CAJA CERRADA (SOLICITAR APERTURA)
   if (!sesionActiva) {
     return (
       <div className="min-h-screen bg-slate-50 p-8 flex items-center justify-center">
@@ -86,7 +85,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     );
   }
 
-  // Helper para dar formato a la fecha: ej "13/AGO/2026"
   const formatearFechaTitulo = (fechaStr?: string) => {
     const d = fechaStr ? new Date(fechaStr) : new Date();
     const dia = String(d.getDate()).padStart(2, '0');
@@ -109,10 +107,8 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     .reduce((acc, current) => acc + Number(current.monto_efectivo || 0), 0);
 
   const totalExtras = ingresosExtras.reduce((acc, item) => acc + Number(item.monto || 0), 0);
-
   const saldoEnCajaTeorico = Number(sesionActiva.monto_inicial) + totalEfectivoIngresos - totalEgresos;
 
-  // 2. INTERFAZ: CAJA ABIERTA
   return (
     <div className="bg-slate-50 p-4 md:p-8 rounded-3xl shadow-inner min-h-screen space-y-6">
       
@@ -273,11 +269,9 @@ export function PanelCaja({ usuario }: { usuario: any }) {
             <form className="p-6 space-y-4" onSubmit={async (e) => {
               e.preventDefault();
 
-              // ... dentro del form onSubmit del modal de cierre
-const fechaFormatted = formatearFechaTitulo(); // Ej: "13/AGO/2026"
+const fechaFormatted = formatearFechaTitulo(); 
 const doc = new jsPDF('l', 'mm', 'a4');
 
-// Encabezados con fecha formateada y apertura ARRIBA del cierre
 doc.setFontSize(16);
 
 doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 148.5, 15, { align: 'center' });
@@ -288,7 +282,6 @@ doc.text(`Fecha de Cierre: ${new Date().toLocaleString('es-BO')}`, 14, 27);
 doc.text(`Operador ADM: ${usuario?.nombre || 'ADM'}`, 14, 32);
 doc.text(`Monto Inicial en Efectivo: ${sesionActiva.monto_inicial} Bs.`, 14, 37);
 
-// 1. Tabla Principal de Movimientos
 autoTable(doc, {
   startY: 42,
   head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Precio', 'Efectivo', 'QR', 'A cuenta', 'Obs.']],
@@ -310,7 +303,6 @@ autoTable(doc, {
 
 let currentY = (doc as any).lastAutoTable.finalY + 8;
 
-// 2. Tabla Secundaria de Ingresos Extras (Si existen)
 if (ingresosExtras.length > 0) {
   doc.setFontSize(11);
   doc.text("Ingresos Extras Registrados:", 14, currentY);
@@ -333,34 +325,26 @@ if (ingresosExtras.length > 0) {
   currentY = (doc as any).lastAutoTable.finalY + 8;
 }
 
-// Cálculo del Total General de Ingresos (Efectivo + QR + Extras)
 const totalGeneralIngresos = totalEfectivoIngresos + totalQrIngresos + totalExtras;
 
-// Totales y resumen
 doc.setFontSize(11);
 doc.text(`Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`, 14, currentY);
 doc.text(`Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`, 14, currentY + 6);
+doc.text(`total hab: ${(totalEfectivoIngresos - totalQrIngresos).toFixed(2)} Bs.`, 14, currentY + 30);
 if (totalExtras > 0) {
   doc.text(`Total Ingresos Extras: ${totalExtras.toFixed(2)} Bs.`, 14, currentY + 12);
   currentY += 6;
 }
-// Mostramos el total general de ingresos sumando todo
-doc.text(`TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`, 14, currentY + 12);
-doc.text(`Efectivo en Caja (Teórico): ${saldoEnCajaTeorico.toFixed(2)} Bs.`, 14, currentY + 18);
-doc.text(`Efectivo Reportado (Real): ${montoCierreReal.toFixed(2)} Bs.`, 14, currentY + 24);
-doc.text(`Diferencia de Efectivo: ${(montoCierreReal - saldoEnCajaTeorico).toFixed(2)} Bs.`, 14, currentY + 30);
 
-// --- SECCIÓN DE FIRMA ---
-// Calculamos una posición Y adecuada para la línea de firma (asegurando que no se salga de la hoja)
+doc.text(`TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`, 14, currentY + 12);
+
 const signatureY = currentY + 45;
 doc.setLineWidth(0.5);
-doc.line(100, signatureY, 200, signatureY); // Línea horizontal para firmar en el centro-derecha
+doc.line(100, signatureY, 200, signatureY); 
 
 doc.setFontSize(10);
 doc.text("Firma de Recepcionista", 150, signatureY + 6, { align: 'center' });
-doc.text(`Nombre: ' '}`, 150, signatureY + 11, { align: 'center' });
-
-// Nombre de descarga solicitado: PLANILLA 13/AGO/2026.pdf
+doc.text(`Nombre: `, 150, signatureY + 11, { align: 'center' });
 doc.save(`PLANILLA ${fechaFormatted}.pdf`);
 
 const res = await cerrarCaja(montoCierreReal);
