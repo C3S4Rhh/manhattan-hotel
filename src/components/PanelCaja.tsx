@@ -169,7 +169,7 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                 <th className="p-4 text-left">Recepcionista</th>
                 <th className="p-4 text-left">factura</th>
                 <th className="p-4 text-left">Huésped</th>
-                <th className="p-4 text-left">Hab.</th>              
+                <th className="p-4 text-left">Hab.</th>      
                 <th className="p-4 text-right">Precio Hospedaje</th>
                 <th className="p-4 text-right">Efectivo</th>
                 <th className="p-4 text-right">QR</th>
@@ -269,90 +269,114 @@ export function PanelCaja({ usuario }: { usuario: any }) {
             <form className="p-6 space-y-4" onSubmit={async (e) => {
               e.preventDefault();
 
-const fechaFormatted = formatearFechaTitulo(); 
-const doc = new jsPDF('l', 'mm', 'a4');
+              const fechaFormatted = formatearFechaTitulo(); 
+              const doc = new jsPDF('l', 'mm', 'a4');
 
-doc.setFontSize(16);
+              doc.setFontSize(16);
+              doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 148.5, 15, { align: 'center' });
 
-doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 148.5, 15, { align: 'center' });
+              doc.setFontSize(10);
+              doc.text(`Fecha de Apertura: ${new Date(sesionActiva.fecha_apertura).toLocaleString('es-BO')}`, 14, 22);
+              doc.text(`Fecha de Cierre: ${new Date().toLocaleString('es-BO')}`, 14, 27);
+              doc.text(`Operador ADM: ${usuario?.nombre || 'ADM'}`, 14, 32);
+              doc.text(`Monto Inicial en Efectivo: ${sesionActiva.monto_inicial} Bs.`, 14, 37);
 
-doc.setFontSize(10);
-doc.text(`Fecha de Apertura: ${new Date(sesionActiva.fecha_apertura).toLocaleString('es-BO')}`, 14, 22);
-doc.text(`Fecha de Cierre: ${new Date().toLocaleString('es-BO')}`, 14, 27);
-doc.text(`Operador ADM: ${usuario?.nombre || 'ADM'}`, 14, 32);
-doc.text(`Monto Inicial en Efectivo: ${sesionActiva.monto_inicial} Bs.`, 14, 37);
+              autoTable(doc, {
+                startY: 42,
+                head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Precio', 'Efectivo', 'QR', 'A cuenta', 'Obs.']],
+                body: movimientos.map(m => [
+                  new Date(m.fecha).toLocaleDateString('es-BO'),
+                  m.usuarios?.nombre || '-', 
+                  m.factura_numero || ' ', 
+                  m.huesped_referencia || '-',
+                  m.nro_habitacion || '-',
+                  `${Number(m.monto_total || 0).toFixed(2)} Bs.`, 
+                  `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
+                  `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
+                  `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
+                  m.observaciones || '-'
+                ]),
+                theme: 'striped',
+                headStyles: { fillColor: [30, 41, 59] },
+              });
 
-autoTable(doc, {
-  startY: 42,
-  head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Precio', 'Efectivo', 'QR', 'A cuenta', 'Obs.']],
-  body: movimientos.map(m => [
-    new Date(m.fecha).toLocaleDateString('es-BO'),
-    m.usuarios?.nombre || '-', 
-    m.factura_numero || ' ', 
-    m.huesped_referencia || '-',
-    m.nro_habitacion || '-',
-    `${Number(m.monto_total || 0).toFixed(2)} Bs.`, 
-    `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
-    `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
-    `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
-    m.observaciones || '-'
-  ]),
-  theme: 'striped',
-  headStyles: { fillColor: [30, 41, 59] },
-});
+              let currentY = (doc as any).lastAutoTable.finalY + 8;
 
-let currentY = (doc as any).lastAutoTable.finalY + 8;
+              if (ingresosExtras.length > 0) {
+                doc.setFontSize(11);
+                doc.text("Ingresos Extras Registrados:", 14, currentY);
+                currentY += 4;
 
-if (ingresosExtras.length > 0) {
-  doc.setFontSize(11);
-  doc.text("Ingresos Extras Registrados:", 14, currentY);
-  currentY += 4;
+                autoTable(doc, {
+                  startY: currentY,
+                  head: [['Fecha', 'Descripción', 'Categoría', 'Responsable', 'Monto']],
+                  body: ingresosExtras.map(ie => [
+                    new Date(ie.fecha).toLocaleDateString('es-BO'),
+                    ie.descripcion || '-',
+                    ie.categoria || '-',
+                    ie.responsable || '-',
+                    `${Number(ie.monto || 0).toFixed(2)} Bs.`
+                  ]),
+                  theme: 'grid',
+                  headStyles: { fillColor: [217, 119, 6] },
+                });
 
-  autoTable(doc, {
-    startY: currentY,
-    head: [['Fecha', 'Descripción', 'Categoría', 'Responsable', 'Monto']],
-    body: ingresosExtras.map(ie => [
-      new Date(ie.fecha).toLocaleDateString('es-BO'),
-      ie.descripcion || '-',
-      ie.categoria || '-',
-      ie.responsable || '-',
-      `${Number(ie.monto || 0).toFixed(2)} Bs.`
-    ]),
-    theme: 'grid',
-    headStyles: { fillColor: [217, 119, 6] },
-  });
+                currentY = (doc as any).lastAutoTable.finalY + 8;
+              }
 
-  currentY = (doc as any).lastAutoTable.finalY + 8;
-}
+              const totalGeneralIngresos = totalEfectivoIngresos + totalQrIngresos + totalExtras;
 
-const totalGeneralIngresos = totalEfectivoIngresos + totalQrIngresos + totalExtras;
+              doc.setFontSize(11);
+              doc.text(`Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`, 14, currentY);
+              doc.text(`Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`, 14, currentY + 6);
+              doc.text(`total hab: ${(totalEfectivoIngresos - totalQrIngresos).toFixed(2)} Bs.`, 14, currentY + 30);
+              if (totalExtras > 0) {
+                doc.text(`Total Ingresos Extras: ${totalExtras.toFixed(2)} Bs.`, 14, currentY + 12);
+                currentY += 6;
+              }
 
-doc.setFontSize(11);
-doc.text(`Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`, 14, currentY);
-doc.text(`Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`, 14, currentY + 6);
-doc.text(`total hab: ${(totalEfectivoIngresos - totalQrIngresos).toFixed(2)} Bs.`, 14, currentY + 30);
-if (totalExtras > 0) {
-  doc.text(`Total Ingresos Extras: ${totalExtras.toFixed(2)} Bs.`, 14, currentY + 12);
-  currentY += 6;
-}
+              doc.text(`TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`, 14, currentY + 12);
 
-doc.text(`TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`, 14, currentY + 12);
+              const signatureY = currentY + 45;
+              doc.setLineWidth(0.5);
+              doc.line(100, signatureY, 200, signatureY); 
 
-const signatureY = currentY + 45;
-doc.setLineWidth(0.5);
-doc.line(100, signatureY, 200, signatureY); 
+              doc.setFontSize(10);
+              doc.text("Firma de Recepcionista", 150, signatureY + 6, { align: 'center' });
+              doc.text(`Nombre: `, 150, signatureY + 11, { align: 'center' });
+              doc.save(`PLANILLA ${fechaFormatted}.pdf`);
 
-doc.setFontSize(10);
-doc.text("Firma de Recepcionista", 150, signatureY + 6, { align: 'center' });
-doc.text(`Nombre: `, 150, signatureY + 11, { align: 'center' });
-doc.save(`PLANILLA ${fechaFormatted}.pdf`);
+              // 1. Construimos el snapshot detallado con los movimientos, extras y totales del turno actual
+              const snapshotDetalle = {
+                movimientos,
+                ingresosExtra: ingresosExtras,
+                totales: {
+                  inicial: Number(sesionActiva.monto_inicial),
+                  ingresosEfectivo: totalEfectivoIngresos,
+                  ingresosQr: totalQrIngresos,
+                  egresos: totalEgresos,
+                  ingresosExtra: totalExtras,
+                  efectivoEsperado: saldoEnCajaTeorico,
+                  montoCierreReal: Number(montoCierreReal),
+                  diferencia: Number(montoCierreReal) - saldoEnCajaTeorico
+                }
+              };
 
-const res = await cerrarCaja(montoCierreReal);
-if (res.success) {
-  setMostrarModalCierre(false);
-} else {
-  alert("Error al guardar el cierre: " + res.error);
-}
+              // 2. Enviamos el snapshot y los parámetros de cierre a la función cerrarCaja
+              const res = await cerrarCaja(Number(montoCierreReal), {
+                monto_teorico: saldoEnCajaTeorico,
+                total_efectivo: totalEfectivoIngresos,
+                total_qr: totalQrIngresos,
+                total_extras: totalExtras,
+                diferencia: Number(montoCierreReal) - saldoEnCajaTeorico,
+                detalle_snapshot: snapshotDetalle
+              });
+
+              if (res.success) {
+                setMostrarModalCierre(false);
+              } else {
+                alert("Error al guardar el cierre: " + res.error);
+              }
             }}>
               
               <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100 space-y-1">
