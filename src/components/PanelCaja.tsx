@@ -1,8 +1,9 @@
-'use client'
-import { useState } from 'react'
+"use client";
+import { useState, useEffect } from 'react'
 import { useCaja } from '@/hook/useCaja'
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { supabase } from '@/lib/supabase';
 
 export function PanelCaja({ usuario }: { usuario: any }) {
   const {
@@ -11,26 +12,29 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     loading,
     cargandoAccion,
     abrirCaja,
-    registrarMovimientoManual,
     cerrarCaja
   } = useCaja(usuario);
 
   // Estados locales para los formularios
   const [montoInicial, setMontoInicial] = useState<number>(0);
   const [montoCierreReal, setMontoCierreReal] = useState<number>(0);
-  const [mostrarModalMovimiento, setMostrarModalMovimiento] = useState(false);
   const [mostrarModalCierre, setMostrarModalCierre] = useState(false);
+  const [ingresosExtras, setIngresosExtras] = useState<any[]>([]);
 
-  // Estado para un nuevo movimiento manual
-  const [nuevoMov, setNuevoMov] = useState({
-    tipo: 'ingreso' as 'ingreso' | 'egreso',
-    montoTotal: 0,
-    montoACuenta: 0,
-    facturaNumero: '',
-    huespedReferencia: '',
-    idHabitacion: '',
-    observaciones: ''
-  });
+  // Cargar ingresos extras correspondientes a la sesión activa o fecha actual
+  useEffect(() => {
+    if (sesionActiva) {
+      const fetchIngresosExtras = async () => {
+        const { data } = await supabase
+          .from('ingresos_extra')
+          .select('*')
+          .gte('fecha', sesionActiva.fecha_apertura);
+        
+        setIngresosExtras(data || []);
+      };
+      fetchIngresosExtras();
+    }
+  }, [sesionActiva]);
 
   if (loading) {
     return (
@@ -82,10 +86,19 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     );
   }
 
-  // Cálculos rápidos de control financiero en pantalla (Efectivo vs QR)
+  // Helper para dar formato a la fecha: ej "13/AGO/2026"
+  const formatearFechaTitulo = (fechaStr?: string) => {
+    const d = fechaStr ? new Date(fechaStr) : new Date();
+    const dia = String(d.getDate()).padStart(2, '0');
+    const meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+    const mes = meses[d.getMonth()];
+    const anio = d.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+  };
+
   const totalEfectivoIngresos = movimientos
     .filter(m => m.tipo_movimiento === 'ingreso')
-    .reduce((acc, current) => acc + Number(current.monto_efectivo || current.monto_a_cuenta || 0), 0);
+    .reduce((acc, current) => acc + Number(current.monto_efectivo || 0), 0);
 
   const totalQrIngresos = movimientos
     .filter(m => m.tipo_movimiento === 'ingreso')
@@ -93,15 +106,17 @@ export function PanelCaja({ usuario }: { usuario: any }) {
 
   const totalEgresos = movimientos
     .filter(m => m.tipo_movimiento === 'egreso')
-    .reduce((acc, current) => acc + Number(current.monto_a_cuenta || current.monto_efectivo || 0), 0);
+    .reduce((acc, current) => acc + Number(current.monto_efectivo || 0), 0);
+
+  const totalExtras = ingresosExtras.reduce((acc, item) => acc + Number(item.monto || 0), 0);
 
   const saldoEnCajaTeorico = Number(sesionActiva.monto_inicial) + totalEfectivoIngresos - totalEgresos;
 
-  // 2. INTERFAZ: CAJA ABIERTA (PANEL DE CONTROL GENERAL)
+  // 2. INTERFAZ: CAJA ABIERTA
   return (
     <div className="bg-slate-50 p-4 md:p-8 rounded-3xl shadow-inner min-h-screen space-y-6">
       
-      {/* Cards de KPIs Financieros con Desglose de Efectivo y QR */}
+      {/* Cards de KPIs Financieros */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 max-w-7xl mx-auto">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">💰 Monto Inicial</span>
@@ -116,8 +131,8 @@ export function PanelCaja({ usuario }: { usuario: any }) {
           <span className="text-2xl font-black text-indigo-600 mt-2">+{totalQrIngresos.toFixed(2)} Bs.</span>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">📉 Egresos Totales</span>
-          <span className="text-2xl font-black text-rose-600 mt-2">-{totalEgresos.toFixed(2)} Bs.</span>
+          <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">✨ Ingresos Extras</span>
+          <span className="text-2xl font-black text-amber-600 mt-2">+{totalExtras.toFixed(2)} Bs.</span>
         </div>
         <div className="bg-slate-900 p-6 rounded-2xl shadow-lg text-white flex flex-col justify-between">
           <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">💼 Efectivo Esperado</span>
@@ -156,28 +171,29 @@ export function PanelCaja({ usuario }: { usuario: any }) {
               <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                 <th className="p-4 text-left">Fecha y Hora</th>
                 <th className="p-4 text-left">Recepcionista</th>
-                <th className="p-4 text-left">Huésped / Concepto</th>
-                <th className="p-4 text-left">Hab.</th>
-                <th className="p-4 text-left">Nº Documento</th>
+                <th className="p-4 text-left">factura</th>
+                <th className="p-4 text-left">Huésped</th>
+                <th className="p-4 text-left">Hab.</th>              
                 <th className="p-4 text-right">Precio Hospedaje</th>
                 <th className="p-4 text-right">Efectivo</th>
                 <th className="p-4 text-right">QR</th>
                 <th className="p-4 text-right">Saldo Restante</th>
+                <th className="p-4 text-right">A cuenta</th>
                 <th className="p-4 text-left">Observaciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {movimientos.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-300 font-bold italic text-sm">
-                    No se han registrado movimientos de efectivo o QR en este turno.
+                  <td colSpan={11} className="p-8 text-center text-slate-300 font-bold italic text-sm">
+                    No se han registrado movimientos en este turno.
                   </td>
                 </tr>
               ) : (
                 movimientos.map((m) => {
                   const deudeRestante = Number(m.monto_saldo || 0);
                   const numeroDeHabitacion = m.habitaciones?.nro_habitacion || m.nro_habitacion;
-                  const montoEfectivoRow = Number(m.monto_efectivo || m.monto_a_cuenta || 0);
+                  const montoEfectivoRow = Number(m.monto_efectivo || 0);
                   const montoQrRow = Number(m.monto_qr || 0);
 
                   return (
@@ -194,7 +210,9 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                       <td className="p-4 text-xs font-bold text-slate-600 capitalize">
                         {m.usuarios?.nombre || usuario?.nombre || 'Cesar'}
                       </td>
-                      
+                      <td className="p-4 text-xs font-mono text-slate-500">
+                        {m.factura_numero || ' '}
+                      </td>
                       <td className="p-4 text-sm font-bold text-slate-700 capitalize">
                         {m.huesped_referencia || 'Gasto Operativo'}
                       </td>
@@ -202,27 +220,24 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                       <td className="p-4 text-sm font-black text-blue-600">
                         {numeroDeHabitacion ? `#${numeroDeHabitacion}` : '---'}
                       </td>
-                      
-                      <td className="p-4 text-xs font-mono text-slate-500">
-                        {m.factura_numero || 'S/F'}
-                      </td>
-                      
+
                       <td className="p-4 text-right text-sm font-semibold text-slate-600">
                         {Number(m.monto_total || 0).toFixed(2)} Bs.
                       </td>
                       
-                      {/* Efectivo */}
                       <td className="p-4 text-right text-sm font-black text-emerald-600">
                         {montoEfectivoRow > 0 ? `+${montoEfectivoRow.toFixed(2)} Bs.` : '0.00 Bs.'}
                       </td>
 
-                      {/* QR */}
                       <td className="p-4 text-right text-sm font-black text-indigo-600">
                         {montoQrRow > 0 ? `+${montoQrRow.toFixed(2)} Bs.` : '0.00 Bs.'}
                       </td>
                       
                       <td className="p-4 text-right text-sm font-black text-slate-700 bg-slate-50/50">
                         {deudeRestante > 0 ? `${deudeRestante.toFixed(2)} Bs.` : '0.00 Bs.'}
+                      </td>
+                      <td className="p-4 text-right text-sm font-semibold text-slate-600">
+                        {Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.
                       </td>
 
                       <td className="p-4 text-xs">
@@ -258,60 +273,102 @@ export function PanelCaja({ usuario }: { usuario: any }) {
             <form className="p-6 space-y-4" onSubmit={async (e) => {
               e.preventDefault();
 
-              // 1. Lógica para generar el PDF de Cierre con Columnas Efectivo y QR
-              const doc = new jsPDF('l', 'mm', 'a4');
-              doc.setFontSize(18);
-              doc.text("REPORTE DE CIERRE DE CAJA Y TURNO", 14, 15);
-              doc.setFontSize(10);
-              doc.text(`Fecha de Cierre: ${new Date().toLocaleString()}`, 14, 22);
-              doc.text(`Operador: ${usuario?.nombre || 'Recepcionista'}`, 14, 27);
-              doc.text(`Monto Inicial en Efectivo: ${sesionActiva.monto_inicial} Bs.`, 14, 32);
+              // ... dentro del form onSubmit del modal de cierre
+const fechaFormatted = formatearFechaTitulo(); // Ej: "13/AGO/2026"
+const doc = new jsPDF('l', 'mm', 'a4');
 
-              // Tabla de movimientos horizontal con columnas separadas para Efectivo y QR
-              autoTable(doc, {
-                startY: 40,
-                head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Precio', 'Efectivo', 'QR', 'Obs.']],
-                body: movimientos.map(m => [
-                  new Date(m.fecha).toLocaleDateString(),
-                  m.usuarios?.nombre || '-', 
-                  m.factura_numero || '-', 
-                  m.huesped_referencia || '-',
-                  m.nro_habitacion || '-',
-                  `${Number(m.monto_total || 0).toFixed(2)} Bs.`, 
-                  `${Number(m.monto_efectivo || m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
-                  `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
-                  m.observaciones || '-'
-                ]),
-                theme: 'striped',
-                headStyles: { fillColor: [30, 41, 59] },
-                columnStyles: {
-                  8: { cellWidth: 60 },
-                },
-                didParseCell: (data) => {
-                  if (data.column.index === 8) {
-                    data.cell.styles.fontSize = 8;
-                  }
-                }
-              });
+// Encabezados con fecha formateada y apertura ARRIBA del cierre
+doc.setFontSize(16);
 
-              // Totales finales reflejados en el PDF
-              const finalY = (doc as any).lastAutoTable.finalY + 10;
-              doc.setFontSize(11);
-              doc.text(`Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`, 14, finalY);
-              doc.text(`Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`, 14, finalY + 6);
-              doc.text(`Efectivo Teórico en Caja (Inicial + Efectivo): ${saldoEnCajaTeorico.toFixed(2)} Bs.`, 14, finalY + 12);
-              doc.text(`Efectivo Real Reportado en Caja: ${montoCierreReal.toFixed(2)} Bs.`, 14, finalY + 18);
-              doc.text(`Diferencia de Efectivo: ${(montoCierreReal - saldoEnCajaTeorico).toFixed(2)} Bs.`, 14, finalY + 24);
+doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 148.5, 15, { align: 'center' });
 
-              doc.save(`cierre_caja_${new Date().getTime()}.pdf`);
+doc.setFontSize(10);
+doc.text(`Fecha de Apertura: ${new Date(sesionActiva.fecha_apertura).toLocaleString('es-BO')}`, 14, 22);
+doc.text(`Fecha de Cierre: ${new Date().toLocaleString('es-BO')}`, 14, 27);
+doc.text(`Operador ADM: ${usuario?.nombre || 'ADM'}`, 14, 32);
+doc.text(`Monto Inicial en Efectivo: ${sesionActiva.monto_inicial} Bs.`, 14, 37);
 
-              // 2. Ejecutar cierre en Base de Datos
-              const res = await cerrarCaja(montoCierreReal);
-              if (res.success) {
-                setMostrarModalCierre(false);
-              } else {
-                alert("Error al guardar el cierre: " + res.error);
-              }
+// 1. Tabla Principal de Movimientos
+autoTable(doc, {
+  startY: 42,
+  head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Precio', 'Efectivo', 'QR', 'A cuenta', 'Obs.']],
+  body: movimientos.map(m => [
+    new Date(m.fecha).toLocaleDateString('es-BO'),
+    m.usuarios?.nombre || '-', 
+    m.factura_numero || ' ', 
+    m.huesped_referencia || '-',
+    m.nro_habitacion || '-',
+    `${Number(m.monto_total || 0).toFixed(2)} Bs.`, 
+    `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
+    `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
+    `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
+    m.observaciones || '-'
+  ]),
+  theme: 'striped',
+  headStyles: { fillColor: [30, 41, 59] },
+});
+
+let currentY = (doc as any).lastAutoTable.finalY + 8;
+
+// 2. Tabla Secundaria de Ingresos Extras (Si existen)
+if (ingresosExtras.length > 0) {
+  doc.setFontSize(11);
+  doc.text("Ingresos Extras Registrados:", 14, currentY);
+  currentY += 4;
+
+  autoTable(doc, {
+    startY: currentY,
+    head: [['Fecha', 'Descripción', 'Categoría', 'Responsable', 'Monto']],
+    body: ingresosExtras.map(ie => [
+      new Date(ie.fecha).toLocaleDateString('es-BO'),
+      ie.descripcion || '-',
+      ie.categoria || '-',
+      ie.responsable || '-',
+      `${Number(ie.monto || 0).toFixed(2)} Bs.`
+    ]),
+    theme: 'grid',
+    headStyles: { fillColor: [217, 119, 6] },
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 8;
+}
+
+// Cálculo del Total General de Ingresos (Efectivo + QR + Extras)
+const totalGeneralIngresos = totalEfectivoIngresos + totalQrIngresos + totalExtras;
+
+// Totales y resumen
+doc.setFontSize(11);
+doc.text(`Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`, 14, currentY);
+doc.text(`Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`, 14, currentY + 6);
+if (totalExtras > 0) {
+  doc.text(`Total Ingresos Extras: ${totalExtras.toFixed(2)} Bs.`, 14, currentY + 12);
+  currentY += 6;
+}
+// Mostramos el total general de ingresos sumando todo
+doc.text(`TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`, 14, currentY + 12);
+doc.text(`Efectivo en Caja (Teórico): ${saldoEnCajaTeorico.toFixed(2)} Bs.`, 14, currentY + 18);
+doc.text(`Efectivo Reportado (Real): ${montoCierreReal.toFixed(2)} Bs.`, 14, currentY + 24);
+doc.text(`Diferencia de Efectivo: ${(montoCierreReal - saldoEnCajaTeorico).toFixed(2)} Bs.`, 14, currentY + 30);
+
+// --- SECCIÓN DE FIRMA ---
+// Calculamos una posición Y adecuada para la línea de firma (asegurando que no se salga de la hoja)
+const signatureY = currentY + 45;
+doc.setLineWidth(0.5);
+doc.line(100, signatureY, 200, signatureY); // Línea horizontal para firmar en el centro-derecha
+
+doc.setFontSize(10);
+doc.text("Firma de Recepcionista", 150, signatureY + 6, { align: 'center' });
+doc.text(`Nombre: ' '}`, 150, signatureY + 11, { align: 'center' });
+
+// Nombre de descarga solicitado: PLANILLA 13/AGO/2026.pdf
+doc.save(`PLANILLA ${fechaFormatted}.pdf`);
+
+const res = await cerrarCaja(montoCierreReal);
+if (res.success) {
+  setMostrarModalCierre(false);
+} else {
+  alert("Error al guardar el cierre: " + res.error);
+}
             }}>
               
               <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100 space-y-1">
@@ -332,7 +389,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                 />
               </div>
 
-              {/* Notificación visual de descuadre */}
               {montoCierreReal !== saldoEnCajaTeorico && (
                 <div className={`p-3 rounded-xl text-center text-xs font-bold ${montoCierreReal > saldoEnCajaTeorico ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                   {montoCierreReal > saldoEnCajaTeorico 
