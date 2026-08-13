@@ -30,10 +30,12 @@ export function useCaja(usuarioActivo: any) {
       setLoading(false)
     }
   }, [])
+
   // 2. Cargar los movimientos del turno o del día actual
   const cargarMovimientos = async (sesionId: string) => {
     try {
-    
+      // Usamos la fecha de apertura de la sesión activa para traer todo lo registrado desde ese momento
+      // O puedes omitir el filtro de sesión si prefieres ver los movimientos del día
       const { data: sesionData } = await supabase
         .from('caja_sesiones')
         .select('fecha_apertura')
@@ -67,7 +69,7 @@ export function useCaja(usuarioActivo: any) {
             estado_actual
           ),usuarios:id_usuario(nombre)
         `)
-        .gte('fecha', fechaApertura) 
+        .gte('fecha', fechaApertura) // Trae los movimientos desde la apertura de caja
         .order('fecha', { ascending: false });
 
       if (error) throw error;
@@ -76,7 +78,6 @@ export function useCaja(usuarioActivo: any) {
       console.error('Error al cargar movimientos de caja:', error);
     }
   };
-
   // 3. Función para APERTURA de Caja / Turno
   const abrirCaja = async (montoInicial: number) => {
     if (!usuarioActivo?.id) return { success: false, error: 'No hay usuario activo' }
@@ -169,8 +170,9 @@ export function useCaja(usuarioActivo: any) {
     }
   };
 
+  
   // 5. Función para CIERRE de Caja / Turno
-  const cerrarCaja = async (montoEfectivoReal: number, observaciones?: string) => {
+  const cerrarCaja = async (montoEfectivoReal: number, datosAdicionales?: any, observaciones?: string) => {
     if (!sesionActiva) return { success: false, error: 'No hay ninguna sesión activa para cerrar' }
 
     try {
@@ -181,6 +183,8 @@ export function useCaja(usuarioActivo: any) {
         .update({
           id_usuario_cierre: usuarioActivo.id,
           fecha_cierre: new Date().toISOString(),
+          // Se usa operador opcional por si se llama sin el segundo argumento
+          detalle_snapshot: datosAdicionales?.detalle_snapshot || null,
           monto_final_efectivo: montoEfectivoReal,
           estado: 'cerrada',
           observaciones_cierre: observaciones || null
