@@ -142,11 +142,20 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
   }
 };
 
-  const realizarSalidaTotal = async () => {
+ const realizarSalidaTotal = async (efectivo: number, qr: number) => {
+    const pagoIngresado = Number(efectivo) + Number(qr);
+    
+    // CAMBIA 'pagoFinal' POR 'saldoFinal' AQUí:
+    if (pagoIngresado < saldoFinal) {
+      alert("El monto ingresado (Efectivo + QR) es menor al saldo pendiente.");
+      return;
+    }
+
     if (!saldoLiquidado) {
       alert("Debe liquidar el saldo pendiente antes de finalizar.");
       return;
     }
+    
     setProcesando(true);
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -154,7 +163,8 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
       
       const ahora = new Date().toISOString();
 
-      if (pagoFinal > 0) {
+      // Y aquí asegúrate de registrar 'saldoFinal' en lugar de 'pagoFinal' si corresponde:
+      if (saldoFinal > 0) {
         const { data: sesion } = await supabase.from('caja_sesiones').select('id').eq('estado', 'abierta').single();
         if (!sesion) throw new Error("No hay una caja abierta.");
         
@@ -165,15 +175,18 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
           nro_habitacion: hab.numero,
           tipo_movimiento: 'ingreso',
           categoria: 'Hospedaje',
-          monto_total: pagoFinal,
-          monto_a_cuenta: pagoFinal,
+          monto_total: saldoFinal,
+          monto_efectivo: Number(efectivo),
+          monto_qr: Number(qr),
+          monto_a_cuenta: saldoFinal,
+          monto_saldo: 0,
           huesped_referencia: registro.detalle_hospedaje_huespedes?.[0]?.clientes?.nombre || 'Checkout Hab. ' + hab.numero,
-          observaciones: `Checkout. Extra: ${diasExtra} día(s). Desc: ${descuentoMonto}%`
+          observaciones: `Checkout. Extra: ${diasExtra} día(s). Desc: ${descuentoMonto}Bs.`
         }]);
       }
 
       await supabase.from('hospedajes').update({
-        a_cuenta: (registro.a_cuenta || 0) + pagoFinal,
+        a_cuenta: (registro.a_cuenta || 0) + saldoFinal,
         saldo_total: 0,
         estado: 'finalizado',
         fecha_salida: ahora
@@ -182,18 +195,15 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
       await supabase.from('detalle_hospedaje_huespedes').update({ estado: 'retirado', fecha_salida_individual: ahora }).eq('id_hospedaje', registro.id).eq('estado', 'activo');
       await habitacionesService.checkOut(hab.id);
       
-      onSuccess();
-    
-await supabase
-  .from('habitaciones')
-  .update({ 
-    estado_actual: 'sucio',        
-    estado_limpieza: 'sucio'   
-  })
-  .eq('id', hab.id);
+      await supabase
+        .from('habitaciones')
+        .update({ 
+          estado_actual: 'sucio',          
+          estado_limpieza: 'sucio'   
+        })
+        .eq('id', hab.id);
 
-onSuccess(); 
-// ...
+      onSuccess(); 
     } catch (e: any) {
       console.error(e);
       alert("Error al procesar la salida: " + e.message);
