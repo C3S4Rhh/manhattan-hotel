@@ -24,7 +24,7 @@ export function CheckOutModal({
   const [tiempoRestante, setTiempoRestante] = useState<string>("");
   const [estaAtrasado, setEstaAtrasado] = useState<boolean>(false);
   const [abiertoConfirmarSalida, setAbiertoConfirmarSalida] = useState(false);
-  
+
   // Estado local para la justificación del descuento
   const [justificacionDescuento, setJustificacionDescuento] = useState("");
 
@@ -48,8 +48,12 @@ export function CheckOutModal({
   useEffect(() => {
     if (registro) {
       setDatosHospedaje(registro);
-      const obsBD = registro.observaciones_descuento || registro.observaciones || registro.observacion || "";
-      
+      const obsBD =
+        registro.observaciones_descuento ||
+        registro.observaciones ||
+        registro.observacion ||
+        "";
+
       if (obsBD) {
         // Si el texto incluye el formato automático del monto, lo separamos para mostrar solo el texto limpio en el input
         const partes = obsBD.split(" - Descuento:");
@@ -498,7 +502,7 @@ export function CheckOutModal({
               <button
                 onClick={() => {
                   setAbiertoConfirmarSalida(false);
-                  realizarSalidaTotal();
+                  realizarSalidaTotal(pagoEfectivo, pagoQR);
                 }}
                 className="flex-1 py-2 rounded-lg bg-emerald-600 font-bold text-white"
               >
