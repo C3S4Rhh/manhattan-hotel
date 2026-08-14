@@ -76,42 +76,46 @@ export function useCaja(usuarioActivo: any) {
 
       // Enriquecemos cada movimiento buscando la cantidad de días dependiendo de si es reserva u hospedaje
       const movimientosConDetalles = await Promise.all((data || []).map(async (mov) => {
-        let cantidad_dias = 0;
-        let medios_dias_extra = 0;
+        // Dentro de cargarMovimientos en useCaja.ts
 
-        // Si el movimiento tiene id_reserva, consultamos la tabla reservas
-        if (mov.id_reserva) {
-          const { data: reservaData } = await supabase
-            .from('reservas')
-            .select('cantidad_dias')
-            .eq('id', mov.id_reserva)
-            .maybeSingle();
+let cantidad_dias = 0;
+let medios_dias_extra = 0;
+let observacionHospedaje = null;
 
-          if (reservaData) {
-            cantidad_dias = reservaData.cantidad_dias || 0;
-          }
-        } 
-        // Si no es reserva pero tiene id_habitacion, consultamos la tabla hospedajes
-        else if (mov.id_habitacion) {
-          const { data: hospData } = await supabase
-            .from('hospedajes')
-            .select('cantidad_dias, medios_dias_extra')
-            .eq('id_habitacion', mov.id_habitacion)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+if (mov.id_reserva) {
+  const { data: reservaData } = await supabase
+    .from('reservas')
+    .select('cantidad_dias')
+    .eq('id', mov.id_reserva)
+    .maybeSingle();
 
-          if (hospData) {
-            cantidad_dias = hospData.cantidad_dias || 0;
-            medios_dias_extra = hospData.medios_dias_extra || 0;
-          }
-        }
+  if (reservaData) {
+    cantidad_dias = reservaData.cantidad_dias || 0;
+  }
+} 
+else if (mov.id_habitacion) {
+  const { data: hospData } = await supabase
+    .from('hospedajes')
+    .select('cantidad_dias, medios_dias_extra, observaciones')
+    .eq('id_habitacion', mov.id_habitacion)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-        return {
-          ...mov,
-          cantidad_dias,
-          medios_dias_extra
-        };
+  if (hospData) {
+    cantidad_dias = hospData.cantidad_dias || 0;
+    medios_dias_extra = hospData.medios_dias_extra || 0;
+    observacionHospedaje = hospData.observaciones || null;
+  }
+}
+
+return {
+  ...mov,
+  cantidad_dias,
+  medios_dias_extra,
+  observaciones: mov.observaciones || null,             // Observación limpia del movimiento
+  observaciones_hospedaje: observacionHospedaje         // Observación limpia del hospedaje
+};
       }));
 
       setMovimientos(movimientosConDetalles);
