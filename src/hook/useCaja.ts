@@ -48,12 +48,14 @@ export function useCaja(usuarioActivo: any) {
           id_sesion,
           id_usuario,
           id_habitacion,
+          id_reserva,
           nro_habitacion,
           fecha,
           tipo_movimiento,
           categoria,
           monto_total,
           monto_a_cuenta,
+          monto_reserva,
           monto_saldo,
           monto_efectivo,
           monto_qr,
@@ -72,12 +74,25 @@ export function useCaja(usuarioActivo: any) {
 
       if (error) throw error;
 
-      // Enriquecemos cada movimiento buscando explícitamente en la tabla hospedajes
-      const movimientosConHospedaje = await Promise.all((data || []).map(async (mov) => {
+      // Enriquecemos cada movimiento buscando la cantidad de días dependiendo de si es reserva u hospedaje
+      const movimientosConDetalles = await Promise.all((data || []).map(async (mov) => {
         let cantidad_dias = 0;
         let medios_dias_extra = 0;
 
-        if (mov.id_habitacion) {
+        // Si el movimiento tiene id_reserva, consultamos la tabla reservas
+        if (mov.id_reserva) {
+          const { data: reservaData } = await supabase
+            .from('reservas')
+            .select('cantidad_dias')
+            .eq('id', mov.id_reserva)
+            .maybeSingle();
+
+          if (reservaData) {
+            cantidad_dias = reservaData.cantidad_dias || 0;
+          }
+        } 
+        // Si no es reserva pero tiene id_habitacion, consultamos la tabla hospedajes
+        else if (mov.id_habitacion) {
           const { data: hospData } = await supabase
             .from('hospedajes')
             .select('cantidad_dias, medios_dias_extra')
@@ -99,11 +114,12 @@ export function useCaja(usuarioActivo: any) {
         };
       }));
 
-      setMovimientos(movimientosConHospedaje);
+      setMovimientos(movimientosConDetalles);
     } catch (error) {
       console.error('Error al cargar movimientos de caja:', error);
     }
   };
+
   // 3. Función para APERTURA de Caja / Turno
   const abrirCaja = async (montoInicial: number) => {
     if (!usuarioActivo?.id) return { success: false, error: 'No hay usuario activo' }
@@ -137,7 +153,7 @@ export function useCaja(usuarioActivo: any) {
 
   // 4. Función para registrar un MOVIMIENTO MANUAL (Cumple con Check Constraints de Supabase)
   const registrarMovimientoManual = async (valores: {
-    tipo_movimiento: 'Ingreso' | 'Egreso' | 'ingreso' | 'egreso' // Soporta formatos mixtos de entrada
+    tipo_movimiento: 'Ingreso' | 'Egreso' | 'ingreso' | 'egreso'
     monto_total: number
     monto_a_cuenta: number
     monto_saldo: number
@@ -147,18 +163,17 @@ export function useCaja(usuarioActivo: any) {
     nro_habitacion?: string  
     fecha?: string           
     id_check_in?: string
+    id_reserva?: string
     observaciones?: string
-    categoria?: string       // Permite asignar categorías específicas personalizadas
+    categoria?: string       
   }) => {
     if (!sesionActiva) return { success: false, error: 'La caja está cerrada' }
 
     try {
       setCargandoAccion(true)
       
-      // Normalizamos a Mayúscula Inicial para evitar violaciones de Check Constraint (PostgreSQL)
       const tipoNormalizado = valores.tipo_movimiento.toLowerCase() === 'egreso' ? 'Egreso' : 'Ingreso';
 
-      // Categorías válidas capitalizadas para evitar el error 23514
       const categoriaPorDefecto = valores.categoria || (tipoNormalizado === 'Ingreso' 
         ? 'Hospedaje' 
         : 'Gasto');
@@ -170,6 +185,7 @@ export function useCaja(usuarioActivo: any) {
             id_sesion: sesionActiva.id,
             id_usuario: usuarioActivo?.id || '59150928-f321-4229-8c06-1abd92c5dad0',
             id_habitacion: valores.id_habitacion || null,
+            id_reserva: valores.id_reserva || null,
             nro_habitacion: valores.nro_habitacion ? String(valores.nro_habitacion) : null, 
             id_check_in: valores.id_check_in || null,
             tipo_movimiento: tipoNormalizado,
@@ -195,7 +211,6 @@ export function useCaja(usuarioActivo: any) {
       setCargandoAccion(false)
     }
   };
-
   
   // 5. Función para CIERRE de Caja / Turno
   const cerrarCaja = async (montoEfectivoReal: number, datosAdicionales?: any, observaciones?: string) => {
@@ -209,7 +224,6 @@ export function useCaja(usuarioActivo: any) {
         .update({
           id_usuario_cierre: usuarioActivo.id,
           fecha_cierre: new Date().toISOString(),
-          // Se usa operador opcional por si se llama sin el segundo argumento
           detalle_snapshot: datosAdicionales?.detalle_snapshot || null,
           monto_final_efectivo: montoEfectivoReal,
           estado: 'cerrada',
@@ -242,7 +256,7 @@ export function useCaja(usuarioActivo: any) {
     loading,
     cargandoAccion,
     verificarEstadoCaja,
-    openingBox: abrirCaja, // Mantener alias si es requerido por componentes antiguos
+    openingBox: abrirCaja,
     abrirCaja,
     registrarMovimientoManual,
     cerrarCaja
