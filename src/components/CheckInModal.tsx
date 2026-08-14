@@ -115,6 +115,8 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
               </label>
               <input
                 type="number"
+                step="0.01" // Permite decimales
+                placeholder="0.00"
                 value={pagoEfectivo}
                 onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => setPagoEfectivo(Number(e.target.value))}
@@ -127,6 +129,8 @@ export function CheckInModal({ hab, usuario, onClose, onSuccess }: any) {
               </label>
               <input
                 type="number"
+                step="0.01" // Permite decimales
+                placeholder="0.00"
                 value={pagoQR}
                 onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => setPagoQR(Number(e.target.value))}
