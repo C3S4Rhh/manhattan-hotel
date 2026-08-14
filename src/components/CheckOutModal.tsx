@@ -351,23 +351,23 @@ export function CheckOutModal({
                   className="w-full p-2 rounded-lg border text-sm font-bold"
                 />
               </div>
-              <div>
-                <label className="text-[9px] font-black text-slate-500 uppercase">
-                  Descuento BS
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={descuentoMonto}
-                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                  onChange={(e) =>
-                    setDescuentoMonto(
-                      Math.max(0, parseInt(e.target.value) || 0),
-                    )
-                  }
-                  className="w-full p-2 rounded-lg border text-sm font-bold text-emerald-600"
-                />
-              </div>
+             <div>
+  <label className="text-[9px] font-black text-slate-500 uppercase">
+    Descuento BS
+  </label>
+  <input
+    type="number"
+    step="0.01"
+    value={descuentoMonto}
+    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+    onChange={(e) =>
+      setDescuentoMonto(
+        Math.max(0, parseFloat(e.target.value) || 0)
+      )
+    }
+    className="w-full p-2 rounded-lg border text-sm font-bold text-emerald-600"
+  />
+</div>
             </div>
 
             {/* Input para justificar el descuento */}
