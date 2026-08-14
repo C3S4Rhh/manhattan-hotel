@@ -5,12 +5,12 @@ export const registrarReservaConAdelanto = async (
   montoAdelanto: number, 
   tipoPago: string,
   precioBase: number,     // Precio por día de la habitación
-  cantidadDias: number    // Días calculados: (fecha_fin - fecha_inicio)
+  cantidadDias: number    // Días calculados de forma exacta
 ) => {
   const { data: { user } } = await supabase.auth.getUser();
   
-// Si el nombre no está en metadata, podrías usar el email como respaldo
-const nombreEmpleado = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin";
+  const nombreEmpleado = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin";
+  
   // 0. Validar sesión de caja
   const { data: sesion, error: sesionError } = await supabase
     .from('caja_sesiones') 
@@ -21,7 +21,7 @@ const nombreEmpleado = user?.user_metadata?.full_name || user?.email?.split('@')
   if (sesionError) throw sesionError;
   if (!sesion) throw new Error("No hay una sesión de caja abierta. Por favor, abre caja antes de registrar reservas.");
 
-  // 1. Cálculo de montos
+  // 1. Cálculo exacto de montos usando los días correctos
   const montoTotalReserva = precioBase * cantidadDias;
   const saldoPendiente = montoTotalReserva - montoAdelanto;
 
@@ -37,6 +37,7 @@ const nombreEmpleado = user?.user_metadata?.full_name || user?.email?.split('@')
       fecha_inicio: datosReserva.fecha_inicio,
       fecha_fin: datosReserva.fecha_fin,
       hora_llegada: datosReserva.hora_llegada,
+      cantidad_dias: cantidadDias,
       monto_adelanto: montoAdelanto,
       monto_total: montoTotalReserva,
       estado: 'confirmada'
@@ -47,13 +48,15 @@ const nombreEmpleado = user?.user_metadata?.full_name || user?.email?.split('@')
   if (resError) throw resError;
 
   try {
-    // 3. Registrar en caja_movimientos
-    if (montoAdelanto > 0) {
+    // 3. Registrar en caja_movimientos con los montos reales
+    if (montoAdelanto >= 0) {
       const { error: cajaError } = await supabase.from('caja_movimientos').insert([{
         id_sesion: sesion.id,
         id_usuario: user?.id,
-        id_reserva: reserva.id, // Enlace clave para integridad de datos
+        id_reserva: reserva.id,
         id_habitacion: datosReserva.id_habitacion,
+        nro_habitacion: datosReserva.nro_habitacion,
+        cantidad_dias: cantidadDias,  
         tipo_movimiento: 'ingreso',
         categoria: 'Adelanto Reserva',
         monto_total: montoTotalReserva,
@@ -69,10 +72,7 @@ const nombreEmpleado = user?.user_metadata?.full_name || user?.email?.split('@')
       if (cajaError) throw cajaError;
     }
   } catch (error: any) {
-    // SI FALLA EL REGISTRO EN CAJA, BORRAMOS LA RESERVA PARA MANTENER LIMPIEZA
-    // Esto evita que queden reservas "fantasmas" sin su respaldo financiero
     await supabase.from('reservas').delete().eq('id', reserva.id);
-    
     console.error("Error crítico en proceso de reserva:", error);
     throw new Error(error.message || "Error desconocido al registrar el pago en caja.");
   }
