@@ -13,7 +13,7 @@ export const registrarReservaConAdelanto = async (
 const nombreEmpleado = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin";
   // 0. Validar sesión de caja
   const { data: sesion, error: sesionError } = await supabase
-    .from('caja_sesiones')
+    .from('caja_sesiones') 
     .select('id')
     .eq('estado', 'abierta')
     .maybeSingle();
@@ -57,7 +57,7 @@ const nombreEmpleado = user?.user_metadata?.full_name || user?.email?.split('@')
         tipo_movimiento: 'ingreso',
         categoria: 'Adelanto Reserva',
         monto_total: montoTotalReserva,
-        monto_a_cuenta: montoAdelanto,
+        monto_reserva: montoAdelanto,
         monto_saldo: saldoPendiente,
         monto_efectivo: tipoPago === 'efectivo' ? montoAdelanto : 0,
         monto_qr: tipoPago === 'qr' ? montoAdelanto : 0,
