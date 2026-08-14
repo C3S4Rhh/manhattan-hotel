@@ -357,6 +357,7 @@ export function CheckOutModal({
                 </label>
                 <input
                   type="number"
+                  step="0.01"
                   value={descuentoMonto}
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                   onChange={(e) =>
@@ -423,6 +424,7 @@ export function CheckOutModal({
               </label>
               <input
                 type="number"
+                step="0.01"
                 value={pagoEfectivo}
                 onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => setPagoEfectivo(Number(e.target.value))}
@@ -435,6 +437,7 @@ export function CheckOutModal({
               </label>
               <input
                 type="number"
+                step="0.01"
                 value={pagoQR}
                 onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) => setPagoQR(Number(e.target.value))}
