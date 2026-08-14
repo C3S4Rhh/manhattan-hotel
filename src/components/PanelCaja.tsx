@@ -615,6 +615,7 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                 </label>
                 <input
                   type="number"
+                  step="0.01"
                   required
                   min="0"
                   value={montoCierreReal || ""}
