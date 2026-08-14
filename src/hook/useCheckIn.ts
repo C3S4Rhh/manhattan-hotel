@@ -1,6 +1,4 @@
-/**
- * Hook de check_ins optimizado para Bolivia con validación de edad, nacionalidad y autocompletado
- */
+
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
@@ -164,6 +162,7 @@ if (Number(adelanto) > 0) {
       monto_qr: Number(pagoQR),             // Nuevo campo
       monto_a_cuenta: Number(adelanto), // Toma el adelanto registrado
       monto_saldo: saldo,             // El saldo restante calculado
+      cantidad_dias: diasEstadia,  
       huesped_referencia: huespedes[0].nombre,
       // Formato de observación idéntico a tus registros anteriores
       observaciones: `Check-In Hab. #${hab?.numero} por ${diasEstadia} día(s).- Con deuda - Queda pendiente un saldo de ${saldo} Bs.`,
@@ -225,7 +224,7 @@ if (Number(adelanto) > 0) {
     pagoEfectivo, setPagoEfectivo, // Exportar nuevos estados
     pagoQR, setPagoQR,
     estadoLimpieza, setEstadoLimpieza,
-    setPrecioFinal,precioBaseUnitario,      // <--- Agrégalo aquí
+    setPrecioFinal,precioBaseUnitario,      
     setPrecioBaseUnitario, setFechaIngreso,
     manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso
     
