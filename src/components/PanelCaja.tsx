@@ -1,4 +1,4 @@
-"use client";
+'use client'
 import { useState, useEffect } from 'react'
 import { useCaja } from '@/hook/useCaja'
 import jsPDF from 'jspdf';
@@ -15,13 +15,11 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     cerrarCaja
   } = useCaja(usuario);
 
-  // Estados locales para los formularios
   const [montoInicial, setMontoInicial] = useState<number>(0);
   const [montoCierreReal, setMontoCierreReal] = useState<number>(0);
   const [mostrarModalCierre, setMostrarModalCierre] = useState(false);
   const [ingresosExtras, setIngresosExtras] = useState<any[]>([]);
 
-  // Cargar ingresos extras correspondientes a la sesión activa o fecha actual
   useEffect(() => {
     if (sesionActiva) {
       const fetchIngresosExtras = async () => {
@@ -95,19 +93,29 @@ export function PanelCaja({ usuario }: { usuario: any }) {
   };
 
   const totalEfectivoIngresos = movimientos
-    .filter(m => m.tipo_movimiento === 'ingreso')
+    .filter(m => m.tipo_movimiento.toLowerCase() === 'ingreso')
     .reduce((acc, current) => acc + Number(current.monto_efectivo || 0), 0);
 
   const totalQrIngresos = movimientos
-    .filter(m => m.tipo_movimiento === 'ingreso')
+    .filter(m => m.tipo_movimiento.toLowerCase() === 'ingreso')
     .reduce((acc, current) => acc + Number(current.monto_qr || 0), 0);
 
   const totalEgresos = movimientos
-    .filter(m => m.tipo_movimiento === 'egreso')
+    .filter(m => m.tipo_movimiento.toLowerCase() === 'egreso')
     .reduce((acc, current) => acc + Number(current.monto_efectivo || 0), 0);
 
-  const totalExtras = ingresosExtras.reduce((acc, item) => acc + Number(item.monto || 0), 0);
-  const saldoEnCajaTeorico = Number(sesionActiva.monto_inicial) + totalEfectivoIngresos - totalEgresos;
+  // Usamos 'tipo_pago' tal como está en la base de datos (Supabase)
+  const totalExtrasEfectivo = ingresosExtras
+    .filter(ie => (ie.tipo_pago || 'efectivo').toLowerCase() === 'efectivo')
+    .reduce((acc, item) => acc + Number(item.monto || 0), 0);
+
+  const totalExtrasQr = ingresosExtras
+    .filter(ie => (ie.tipo_pago || '').toLowerCase() === 'qr')
+    .reduce((acc, item) => acc + Number(item.monto || 0), 0);
+
+  const totalExtras = totalExtrasEfectivo + totalExtrasQr;
+  
+  const saldoEnCajaTeorico = Number(sesionActiva.monto_inicial) + totalEfectivoIngresos + totalExtrasEfectivo - totalEgresos;
 
   return (
     <div className="bg-slate-50 p-4 md:p-8 rounded-3xl shadow-inner min-h-screen space-y-6">
@@ -167,7 +175,7 @@ export function PanelCaja({ usuario }: { usuario: any }) {
               <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                 <th className="p-4 text-left">Fecha y Hora</th>
                 <th className="p-4 text-left">Recepcionista</th>
-                <th className="p-4 text-left">factura</th>
+                <th className="p-4 text-left">Factura</th>
                 <th className="p-4 text-left">Huésped</th>
                 <th className="p-4 text-left">Hab.</th>      
                 <th className="p-4 text-left">Estadía</th>      
@@ -176,27 +184,30 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                 <th className="p-4 text-right">QR</th>
                 <th className="p-4 text-right">Saldo Restante</th>
                 <th className="p-4 text-right">A cuenta</th>
+                <th className="p-4 text-right">Total</th>
                 <th className="p-4 text-left">Observaciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {movimientos.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="p-8 text-center text-slate-300 font-bold italic text-sm">
+                  <td colSpan={13} className="p-8 text-center text-slate-300 font-bold italic text-sm">
                     No se han registrado movimientos en este turno.
                   </td>
                 </tr>
               ) : (
                 movimientos.map((m) => {
                   const deudeRestante = Number(m.monto_saldo || 0);
-                  const numeroDeHabitacion = m.habitaciones?.nro_habitacion || m.nro_habitacion;
+                  const numeroDeHabitacion = m.habitaciones?.numero || m.nro_habitacion;
                   const montoEfectivoRow = Number(m.monto_efectivo || 0);
                   const montoQrRow = Number(m.monto_qr || 0);
                   
-                  // Por esto para asegurar que lea tanto si viene plano o anidado:
-const dias = Number(m.cantidad_dias || m.hospedajes?.cantidad_dias || 0);
-const extras = Number(m.medios_dias_extra || m.hospedajes?.medios_dias_extra || 0);
-const totalEstadia = dias + extras;
+                  const dias = Number(m.cantidad_dias || 0);
+                  const extras = Number(m.medios_dias_extra || 0);
+                  const totalEstadia = dias + extras;
+                  
+                  const precioUnitario = dias > 0 ? Number(m.monto_total || 0) / dias : Number(m.monto_total || 0);
+
                   return (
                     <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-4 text-xs font-medium text-slate-500 whitespace-nowrap">
@@ -212,7 +223,7 @@ const totalEstadia = dias + extras;
                         {m.usuarios?.nombre || usuario?.nombre || 'Cesar'}
                       </td>
                       <td className="p-4 text-xs font-mono text-slate-500">
-                        {m.factura_numero || ' '}
+                        {m.factura_numero || '  '}
                       </td>
                       <td className="p-4 text-sm font-bold text-slate-700 capitalize">
                         {m.huesped_referencia || 'Gasto Operativo'}
@@ -227,7 +238,7 @@ const totalEstadia = dias + extras;
                       </td>
 
                       <td className="p-4 text-right text-sm font-semibold text-slate-600">
-                        {Number(m.monto_total/m.cantidad_dias || 0).toFixed(2)} Bs.
+                        {precioUnitario > 0 ? `${precioUnitario.toFixed(2)} Bs.` : '0.00 Bs.'}
                       </td>
                       
                       <td className="p-4 text-right text-sm font-black text-emerald-600">
@@ -242,11 +253,14 @@ const totalEstadia = dias + extras;
                         {deudeRestante > 0 ? `${deudeRestante.toFixed(2)} Bs.` : '0.00 Bs.'}
                       </td>
                       <td className="p-4 text-right text-sm font-semibold text-slate-600">
+                        {Number(m.monto_reserva || 0).toFixed(2)} Bs.
+                      </td>
+                      <td className="p-4 text-right text-sm font-semibold text-slate-600">
                         {Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.
                       </td>
 
                       <td className="p-4 text-xs">
-                        {deudeRestante > 0 && m.tipo_movimiento === 'ingreso' ? (
+                        {deudeRestante > 0 && m.tipo_movimiento.toLowerCase() === 'ingreso' ? (
                           <span className="px-2 py-1 rounded bg-rose-50 text-rose-600 font-bold uppercase text-[9px] border border-rose-100">
                             🔴 DEBE SALDO
                           </span>
@@ -292,22 +306,25 @@ const totalEstadia = dias + extras;
 
               autoTable(doc, {
                 startY: 42,
-                head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Estadía', 'Precio hos.', 'Efectivo', 'QR', 'A cuenta', 'Obs.']],
+                head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Estadía', 'Precio hos.', 'Efectivo', 'QR', 'Saldo', 'A cuenta', 'Total', 'Obs.']],
                 body: movimientos.map(m => {
                   const dias = Number(m.cantidad_dias || 0);
                   const extras = Number(m.medios_dias_extra || 0);
                   const totalEstadia = dias + extras;
+                  const precioUnitario = dias > 0 ? Number(m.monto_total || 0) / dias : Number(m.monto_total || 0);
 
                   return [
                     new Date(m.fecha).toLocaleDateString('es-BO'),
                     m.usuarios?.nombre || '-', 
                     m.factura_numero || ' ', 
                     m.huesped_referencia || '-',
-                    m.nro_habitacion || '-',
+                    m.habitaciones?.numero || m.nro_habitacion || '-',
                     totalEstadia > 0 ? totalEstadia.toString() : '-',
-                    `${Number(m.monto_total/m.cantidad_dias || 0).toFixed(2)} Bs.`, 
+                    `${precioUnitario.toFixed(2)} Bs.`, 
                     `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
                     `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
+                    `${Number(m.monto_saldo || 0).toFixed(2)} Bs.`,
+                    `${Number(m.monto_reserva || 0).toFixed(2)} Bs.`,
                     `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
                     m.observaciones || '-'
                   ];
@@ -325,12 +342,15 @@ const totalEstadia = dias + extras;
 
                 autoTable(doc, {
                   startY: currentY,
-                  head: [['Fecha', 'Descripción', 'Categoría', 'Responsable', 'Monto']],
+                  // Se añadió la columna 'Método' en el PDF
+                  head: [['Fecha', 'Descripción', 'Categoría', 'Responsable', 'Método', 'Monto']],
                   body: ingresosExtras.map(ie => [
                     new Date(ie.fecha).toLocaleDateString('es-BO'),
                     ie.descripcion || '-',
                     ie.categoria || '-',
                     ie.responsable || '-',
+                    // Corregido aquí para usar 'tipo_pago'
+                    ie.tipo_pago ? ie.tipo_pago.toUpperCase() : 'EFECTIVO',
                     `${Number(ie.monto || 0).toFixed(2)} Bs.`
                   ]),
                   theme: 'grid',
@@ -345,9 +365,8 @@ const totalEstadia = dias + extras;
               doc.setFontSize(11);
               doc.text(`Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`, 14, currentY);
               doc.text(`Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`, 14, currentY + 6);
-              doc.text(`total hab: ${(totalEfectivoIngresos - totalQrIngresos).toFixed(2)} Bs.`, 14, currentY + 30);
               if (totalExtras > 0) {
-                doc.text(`Total Ingresos Extras: ${totalExtras.toFixed(2)} Bs.`, 14, currentY + 12);
+                doc.text(`Total Ingresos Extras (Efectivo: ${totalExtrasEfectivo.toFixed(2)} Bs. | QR: ${totalExtrasQr.toFixed(2)} Bs.): ${totalExtras.toFixed(2)} Bs.`, 14, currentY + 12);
                 currentY += 6;
               }
 
@@ -359,10 +378,9 @@ const totalEstadia = dias + extras;
 
               doc.setFontSize(10);
               doc.text("Firma de Recepcionista", 150, signatureY + 6, { align: 'center' });
-              doc.text(`Nombre: `, 150, signatureY + 11, { align: 'center' });
+              doc.text(`Nombre: ${usuario?.nombre || 'Cesar'}`, 150, signatureY + 11, { align: 'center' });
               doc.save(`PLANILLA ${fechaFormatted}.pdf`);
 
-              // 1. Construimos el snapshot detallado con los movimientos, extras y totales del turno actual
               const snapshotDetalle = {
                 movimientos,
                 ingresosExtra: ingresosExtras,
@@ -371,6 +389,8 @@ const totalEstadia = dias + extras;
                   ingresosEfectivo: totalEfectivoIngresos,
                   ingresosQr: totalQrIngresos,
                   egresos: totalEgresos,
+                  ingresosExtraEfectivo: totalExtrasEfectivo,
+                  ingresosExtraQr: totalExtrasQr,
                   ingresosExtra: totalExtras,
                   efectivoEsperado: saldoEnCajaTeorico,
                   montoCierreReal: Number(montoCierreReal),
@@ -378,7 +398,6 @@ const totalEstadia = dias + extras;
                 }
               };
 
-              // 2. Enviamos el snapshot y los parámetros de cierre a la función cerrarCaja
               const res = await cerrarCaja(Number(montoCierreReal), {
                 monto_teorico: saldoEnCajaTeorico,
                 total_efectivo: totalEfectivoIngresos,
@@ -398,7 +417,7 @@ const totalEstadia = dias + extras;
               <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100 space-y-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase">Efectivo Teórico Esperado</p>
                 <p className="text-xl font-black text-slate-800">{saldoEnCajaTeorico.toFixed(2)} Bs.</p>
-                <p className="text-[10px] text-indigo-600 font-bold">Total QR en Turno: {totalQrIngresos.toFixed(2)} Bs.</p>
+                <p className="text-[10px] text-indigo-600 font-bold">Total QR en Turno: {(totalQrIngresos + totalExtrasQr).toFixed(2)} Bs.</p>
               </div>
 
               <div className="space-y-1">
