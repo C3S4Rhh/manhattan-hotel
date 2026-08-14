@@ -22,22 +22,19 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
   });
 
   const cargarDatos = async () => {
-    // Obtener sesión de Supabase
     const { data: { session } } = await supabase.auth.getSession();
     
     if (session?.user) {
       let nombreEncontrado = "Administrador";
 
-      // 1. Intentar buscar en user_metadata
       if (session.user.user_metadata?.nombre) {
         nombreEncontrado = session.user.user_metadata.nombre;
       } else if (session.user.email) {
         nombreEncontrado = session.user.email;
       }
 
-      // 2. Opcional: Buscar en una tabla de perfiles si manejas los nombres ahí
       const { data: perfil } = await supabase
-        .from("usuarios") // Cambia por "profiles" si tu tabla se llama así
+        .from("usuarios")
         .select("nombre")
         .eq("id", session.user.id)
         .single();
@@ -165,27 +162,25 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
       return;
     }
 
-    if (
-      new Date(formData.fecha_inicio + "T00:00:00") >=
-      new Date(formData.fecha_fin + "T00:00:00")
-    ) {
+ // Normalizar fechas limpiando las horas para evitar desfases
+    const [anioInicio, mesInicio, diaInicio] = formData.fecha_inicio.split("-").map(Number);
+    const [anioFin, mesFin, diaFin] = formData.fecha_fin.split("-").map(Number);
+
+    const inicio = new Date(anioInicio, mesInicio - 1, diaInicio);
+    const fin = new Date(anioFin, mesFin - 1, diaFin);
+
+    if (inicio >= fin) {
       alert("La fecha de fin debe ser posterior a la fecha de inicio.");
       return;
     }
 
-    const inicio = new Date(formData.fecha_inicio + "T00:00:00");
-    const fin = new Date(formData.fecha_fin + "T00:00:00");
-
+    // Calcular días exactos de diferencia (noches)
     const diffTime = fin.getTime() - inicio.getTime();
-    const noches = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const horaLlegada = parseInt(formData.hora_llegada.split(":")[0]);
-
-    let diasCobro = noches;
-    if (horaLlegada < 13) {
-      diasCobro += 1;
-    }
-
-    const dias = Math.max(1, diasCobro);
+    const diasNoches = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Si tu hotel cobra un día extra por llegar temprano (ej. antes de las 13:00)
+    const horaInt = parseInt(formData.hora_llegada.split(":")[0]) || 14;
+    const dias = horaInt < 13 ? diasNoches + 1 : diasNoches;
 
     const horaFormateada =
       formData.hora_llegada.length === 5
@@ -220,7 +215,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
           hora_llegada: horaFormateada,
           id_habitacion: idHab,
           nro_habitacion: String(habSeleccionada.numero),
-          responsable: usuarioActual, // Garantiza enviar el nombre obtenido de la sesión
+          responsable: usuarioActual,
         };
 
         await registrarReservaConAdelanto(
