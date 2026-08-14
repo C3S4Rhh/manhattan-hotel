@@ -121,7 +121,7 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
         monto_saldo: nuevoSaldo,
         monto_a_cuenta: montoTotal,
         huesped_referencia: registro.nombre_huesped || 'Huésped',
-        observaciones: `Abono Hab. #${hab.numero} - ${registro.nombre_huesped}. Saldo restante: ${nuevoSaldo} Bs.`,
+        observaciones: `Abono Hab. #${hab.numero} - ${registro.nombre_huesped}. Saldo restante: ${nuevoSaldo} Bs. -Extra: ${diasExtra} día(s). Desc: ${descuentoMonto}Bs.`,
         fecha: new Date().toISOString()
       }]);
 
