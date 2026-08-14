@@ -31,11 +31,8 @@ export function useCaja(usuarioActivo: any) {
     }
   }, [])
 
-  // 2. Cargar los movimientos del turno o del día actual
   const cargarMovimientos = async (sesionId: string) => {
     try {
-      // Usamos la fecha de apertura de la sesión activa para traer todo lo registrado desde ese momento
-      // O puedes omitir el filtro de sesión si prefieres ver los movimientos del día
       const { data: sesionData } = await supabase
         .from('caja_sesiones')
         .select('fecha_apertura')
@@ -52,7 +49,6 @@ export function useCaja(usuarioActivo: any) {
           id_usuario,
           id_habitacion,
           nro_habitacion,
-          id_check_in,
           fecha,
           tipo_movimiento,
           categoria,
@@ -66,14 +62,44 @@ export function useCaja(usuarioActivo: any) {
           observaciones,
           habitaciones:id_habitacion (
             id,
-            estado_actual
-          ),usuarios:id_usuario(nombre)
+            estado_actual,
+            numero
+          ),
+          usuarios:id_usuario(nombre)
         `)
-        .gte('fecha', fechaApertura) // Trae los movimientos desde la apertura de caja
+        .gte('fecha', fechaApertura)
         .order('fecha', { ascending: false });
 
       if (error) throw error;
-      setMovimientos(data || []);
+
+      // Enriquecemos cada movimiento buscando explícitamente en la tabla hospedajes
+      const movimientosConHospedaje = await Promise.all((data || []).map(async (mov) => {
+        let cantidad_dias = 0;
+        let medios_dias_extra = 0;
+
+        if (mov.id_habitacion) {
+          const { data: hospData } = await supabase
+            .from('hospedajes')
+            .select('cantidad_dias, medios_dias_extra')
+            .eq('id_habitacion', mov.id_habitacion)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (hospData) {
+            cantidad_dias = hospData.cantidad_dias || 0;
+            medios_dias_extra = hospData.medios_dias_extra || 0;
+          }
+        }
+
+        return {
+          ...mov,
+          cantidad_dias,
+          medios_dias_extra
+        };
+      }));
+
+      setMovimientos(movimientosConHospedaje);
     } catch (error) {
       console.error('Error al cargar movimientos de caja:', error);
     }
