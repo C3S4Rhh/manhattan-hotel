@@ -170,6 +170,7 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                 <th className="p-4 text-left">factura</th>
                 <th className="p-4 text-left">Huésped</th>
                 <th className="p-4 text-left">Hab.</th>      
+                <th className="p-4 text-left">Estadía</th>      
                 <th className="p-4 text-right">Precio Hospedaje</th>
                 <th className="p-4 text-right">Efectivo</th>
                 <th className="p-4 text-right">QR</th>
@@ -181,7 +182,7 @@ export function PanelCaja({ usuario }: { usuario: any }) {
             <tbody className="divide-y divide-slate-50">
               {movimientos.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="p-8 text-center text-slate-300 font-bold italic text-sm">
+                  <td colSpan={12} className="p-8 text-center text-slate-300 font-bold italic text-sm">
                     No se han registrado movimientos en este turno.
                   </td>
                 </tr>
@@ -191,7 +192,11 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                   const numeroDeHabitacion = m.habitaciones?.nro_habitacion || m.nro_habitacion;
                   const montoEfectivoRow = Number(m.monto_efectivo || 0);
                   const montoQrRow = Number(m.monto_qr || 0);
-
+                  
+                  // Por esto para asegurar que lea tanto si viene plano o anidado:
+const dias = Number(m.cantidad_dias || m.hospedajes?.cantidad_dias || 0);
+const extras = Number(m.medios_dias_extra || m.hospedajes?.medios_dias_extra || 0);
+const totalEstadia = dias + extras;
                   return (
                     <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-4 text-xs font-medium text-slate-500 whitespace-nowrap">
@@ -217,8 +222,12 @@ export function PanelCaja({ usuario }: { usuario: any }) {
                         {numeroDeHabitacion ? `#${numeroDeHabitacion}` : '---'}
                       </td>
 
+                      <td className="p-4 text-sm font-black text-slate-700">
+                        {totalEstadia > 0 ? `${totalEstadia}` : '-'}
+                      </td>
+
                       <td className="p-4 text-right text-sm font-semibold text-slate-600">
-                        {Number(m.monto_total || 0).toFixed(2)} Bs.
+                        {Number(m.monto_total/m.cantidad_dias || 0).toFixed(2)} Bs.
                       </td>
                       
                       <td className="p-4 text-right text-sm font-black text-emerald-600">
@@ -283,19 +292,26 @@ export function PanelCaja({ usuario }: { usuario: any }) {
 
               autoTable(doc, {
                 startY: 42,
-                head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Precio', 'Efectivo', 'QR', 'A cuenta', 'Obs.']],
-                body: movimientos.map(m => [
-                  new Date(m.fecha).toLocaleDateString('es-BO'),
-                  m.usuarios?.nombre || '-', 
-                  m.factura_numero || ' ', 
-                  m.huesped_referencia || '-',
-                  m.nro_habitacion || '-',
-                  `${Number(m.monto_total || 0).toFixed(2)} Bs.`, 
-                  `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
-                  `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
-                  `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
-                  m.observaciones || '-'
-                ]),
+                head: [['Fecha', 'Recepcionista', 'Factura', 'Huésped', 'Hab.', 'Estadía', 'Precio hos.', 'Efectivo', 'QR', 'A cuenta', 'Obs.']],
+                body: movimientos.map(m => {
+                  const dias = Number(m.cantidad_dias || 0);
+                  const extras = Number(m.medios_dias_extra || 0);
+                  const totalEstadia = dias + extras;
+
+                  return [
+                    new Date(m.fecha).toLocaleDateString('es-BO'),
+                    m.usuarios?.nombre || '-', 
+                    m.factura_numero || ' ', 
+                    m.huesped_referencia || '-',
+                    m.nro_habitacion || '-',
+                    totalEstadia > 0 ? totalEstadia.toString() : '-',
+                    `${Number(m.monto_total/m.cantidad_dias || 0).toFixed(2)} Bs.`, 
+                    `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
+                    `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
+                    `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
+                    m.observaciones || '-'
+                  ];
+                }),
                 theme: 'striped',
                 headStyles: { fillColor: [30, 41, 59] },
               });
