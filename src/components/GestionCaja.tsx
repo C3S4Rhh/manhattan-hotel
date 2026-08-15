@@ -13,18 +13,24 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
   const [mostrarGasto, setMostrarGasto] = useState(false);
   const [montoCierre, setMontoCierre] = useState("");
   const [ingresosExtra, setIngresosExtra] = useState<any[]>([]);
+  
+  // Estado para controlar la carga inicial y evitar el parpadeo
+  const [cargando, setCargando] = useState(true);
+  const [abriendo, setAbriendo] = useState(false);
 
   useEffect(() => {
     cargarDatos();
   }, [usuario.id]);
 
   const cargarDatos = async () => {
+    setCargando(true);
     const { data: caja } = await supabase
       .from("cajas")
       .select("*")
       .eq("usuario_id", usuario.id)
       .eq("estado", "abierta")
       .maybeSingle();
+      
     if (caja) {
       setCajaActiva(caja);
       const fechaApertura = caja.fecha_apertura;
@@ -40,7 +46,6 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
           .select("*")
           .eq("id_usuario", usuario.id)
           .gte("fecha", fechaApertura),
-        // Cambia esto en tu promesa de cargarDatos:
         supabase
           .from("ingresos_extra")
           .select("*")
@@ -51,7 +56,10 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
       setMovimientos(movs.data || []);
       setGastos(gts.data || []);
       setIngresosExtra(extras.data || []);
+    } else {
+      setCajaActiva(null);
     }
+    setCargando(false);
   };
 
   const abrirCaja = async () => {
@@ -59,21 +67,44 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
       return alert("Ingrese un monto inicial válido");
     }
 
-    const { error } = await supabase.from("cajas").insert([
-      {
-        usuario_id: usuario.id,
-        monto_apertura: parseFloat(montoInicial),
-        estado: "abierta",
-        fecha_apertura: new Date().toISOString(),
-      },
-    ]);
+    if (abriendo) return;
+    setAbriendo(true);
 
-    if (error) {
-      console.error("Error al abrir caja:", error);
-      alert("No se pudo abrir la caja.");
-    } else {
-      cargarDatos(); // Refresca los datos para que aparezca la interfaz de caja activa
-      if (onCajaChange) onCajaChange();
+    try {
+      const { data: cajaExistente } = await supabase
+        .from("cajas")
+        .select("id")
+        .eq("usuario_id", usuario.id)
+        .eq("estado", "abierta")
+        .maybeSingle();
+
+      if (cajaExistente) {
+        alert("Ya existe una caja abierta para este usuario.");
+        cargarDatos();
+        setAbriendo(false);
+        return;
+      }
+
+      const { error } = await supabase.from("cajas").insert([
+        {
+          usuario_id: usuario.id,
+          monto_apertura: parseFloat(montoInicial),
+          estado: "abierta",
+          fecha_apertura: new Date().toISOString(),
+        },
+      ]);
+
+      if (error) {
+        console.error("Error al abrir caja:", error);
+        alert("No se pudo abrir la caja.");
+        setAbriendo(false);
+      } else {
+        await cargarDatos(); 
+        if (onCajaChange) onCajaChange();
+      }
+    } catch (err) {
+      console.error("Error inesperado:", err);
+      setAbriendo(false);
     }
   };
 
@@ -85,15 +116,12 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
       return alert("Ingrese un monto real contado.");
     }
 
-    // 2. Validar que coincida con el total calculado
-    // Usamos toFixed(2) para comparar correctamente valores decimales
     if (montoFinal.toFixed(2) !== totalEnCaja.toFixed(2)) {
       return alert(
         `El monto no coincide. El total esperado es ${totalEnCaja.toFixed(2)} Bs.`,
       );
     }
 
-    // Creamos el objeto con la "foto" exacta de lo que ocurrió en este turno
     const snapshotDetalle = {
       movimientos,
       gastos,
@@ -117,7 +145,7 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
         monto_qr: totalQR,
         monto_gastos: totalGastos,
         fecha_cierre: new Date().toISOString(),
-        detalle_snapshot: snapshotDetalle,
+        detalle_snapshot: snapshotDetalle
       })
       .eq("id", cajaActiva.id);
 
@@ -127,7 +155,7 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
     } else {
       alert("Caja cerrada exitosamente.");
       setMostrarModalCierre(false);
-      cargarDatos(); // Esto hará que el componente detecte que ya no hay caja abierta
+      cargarDatos();
       if (onCajaChange) onCajaChange();
     }
   };
@@ -144,7 +172,7 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
     (acc, g) => acc + Math.abs(Number(g.monto) || 0),
     0,
   );
-  // Dentro de GestionCaja, junto a tus otros cálculos
+  
   const totalEfectivo =
     movimientos.reduce((acc, m) => acc + Number(m.monto_efectivo || 0), 0) +
     ingresosExtra
@@ -162,11 +190,13 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
     gastos
       .filter((g) => g.tipo_pago === "qr")
       .reduce((acc, g) => acc + Number(g.monto || 0), 0);
+
   const totalEnCaja =
     Number(cajaActiva?.monto_apertura || 0) +
     totalIngresos +
     totalIngresosExtra -
     totalGastos;
+
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4"
@@ -176,7 +206,12 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
         className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {!cajaActiva ? (
+        {cargando ? (
+          <div className="p-16 text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto"></div>
+            <p className="text-slate-400 font-bold text-sm uppercase tracking-wider">Verificando estado de caja...</p>
+          </div>
+        ) : !cajaActiva ? (
           <div className="p-10 text-center space-y-6">
             <h2 className="text-3xl font-black text-slate-800">
               Apertura de Turno
@@ -185,13 +220,17 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
               type="number"
               className="w-full p-6 text-2xl font-bold bg-slate-50 rounded-2xl border-2 border-slate-100 outline-none"
               placeholder="Monto inicial"
+              disabled={abriendo}
               onChange={(e) => setMontoInicial(e.target.value)}
             />
             <button
               onClick={abrirCaja}
-              className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black text-lg"
+              disabled={abriendo}
+              className={`w-full text-white py-6 rounded-2xl font-black text-lg transition-all ${
+                abriendo ? "bg-slate-400 cursor-not-allowed" : "bg-slate-900 hover:bg-slate-800"
+              }`}
             >
-              COMENZAR TURNO
+              {abriendo ? "ABRIENDO CAJA..." : "COMENZAR TURNO"}
             </button>
           </div>
         ) : (
@@ -206,7 +245,6 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                 </p>
               </div>
 
-              {/* Contenedor de botones con flex y gap para el espacio */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() =>
@@ -216,8 +254,8 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                       gastos,
                       ingresosExtra,
                       Number(cajaActiva.monto_apertura),
-                      totalIngresos, // 5to argumento
-                      totalGastos, // 6to argumento
+                      totalIngresos,
+                      totalGastos,
                       totalEnCaja,
                     )
                   }
@@ -240,15 +278,8 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                   Cerrar Caja
                 </button>
               </div>
-
-              {/* Título que solo aparece al imprimir */}
-              <div className="hidden print:block p-8 text-center">
-                <h1 className="text-2xl font-black uppercase">
-                  Reporte de Caja - {usuario.nombre}
-                </h1>
-                <p>Fecha: {new Date().toLocaleDateString()}</p>
-              </div>
             </div>
+
             {mostrarGasto && (
               <div className="px-8">
                 <FormularioGasto
@@ -261,28 +292,29 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                 />
               </div>
             )}
+
             <div className="p-8 grid grid-cols-4 gap-4">
               <div className="bg-slate-100 p-6 rounded-3xl">
                 <p className="text-[10px] font-black text-slate-400 uppercase">
                   Monto Inicial
                 </p>
-                <p className=" text-[18px]text-2xl font-black">
+                <p className="text-[18px] text-2xl font-black">
                   {Number(cajaActiva.monto_apertura).toFixed(2)}Bs.
                 </p>
               </div>
               <div className="bg-emerald-500 p-6 rounded-3xl text-white">
                 <p className="text-[10px] font-black opacity-80 uppercase">
-                  Ingresos +{" "}
+                  Ingresos +
                 </p>
-                <p className=" text-[18px]text-2xl font-black">
+                <p className="text-[18px] text-2xl font-black">
                   {totalIngresos.toFixed(2)}Bs.
                 </p>
               </div>
               <div className="bg-red-500 p-6 rounded-3xl text-white">
                 <p className="text-[10px] font-black opacity-80 uppercase">
-                  egresos -{" "}
+                  egresos -
                 </p>
-                <p className=" text-[18px]text-2xl font-black">
+                <p className="text-[18px] text-2xl font-black">
                   {totalGastos.toFixed(2)}Bs.
                 </p>
               </div>
@@ -294,14 +326,12 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                   {totalEnCaja.toFixed(2)}Bs.
                 </p>
               </div>
-
-              <div>
+              <div >
                 
-
               </div>
               <div className="bg-orange-600 p-6 rounded-3xl text-white">
                 <p className="text-[10px] font-black opacity-80 uppercase">
-                  Total EF.
+                  Total EF.turno.
                 </p>
                 <p className="text-[18px] text-2xl font-black">
                   {totalEfectivo.toFixed(2)}Bs.
@@ -309,19 +339,20 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
               </div>
               <div className="bg-yellow-600 p-6 rounded-3xl text-white">
                 <p className="text-[10px] font-black opacity-80 uppercase">
-                  Total QR
+                  Total QR.turno.
                 </p>
                 <p className="text-[18px] text-2xl font-black">
                   {totalQR.toFixed(2)}Bs.
                 </p>
               </div>
-              <div></div>
+              <div >
+                
+              </div>
             </div>
 
             <div className="px-8 pb-8 overflow-y-auto">
               <div className="grid grid-cols-5 gap-4 px-4 py-2 text-[10px] font-black text-slate-400 uppercase">
                 <div>Cliente</div>
-                {/* <div>Habitación</div> */}
                 <div>obs</div>
                 <div className="text-right">efectivo</div>
                 <div className="text-right">qr</div>
@@ -333,10 +364,9 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                     key={m.id}
                     className="grid grid-cols-5 gap-4 items-center p-4 bg-slate-50 rounded-2xl border border-slate-100"
                   >
-                    <p className="font-bold text-slate-800 uppercase text-xs ">
+                    <p className="font-bold text-slate-800 uppercase text-xs">
                       {m.huesped_referencia}
                     </p>
-                    {/*  <p className="font-bold text-slate-400 uppercase text-xs">Hab. {m.nro_habitacion}</p> */}
                     <p className="font-bold text-slate-400 uppercase text-xs">
                       {m.observaciones}
                     </p>
@@ -356,21 +386,17 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                     key={g.id}
                     className="grid grid-cols-5 gap-4 items-center p-4 bg-slate-50 rounded-2xl border border-slate-100"
                   >
-                    <p className="font-bold text-slate-800 uppercase text-xs ">
+                    <p className="font-bold text-slate-800 uppercase text-xs">
                       {g.huesped_referencia || "-"}
                     </p>
-                    {/*  <p className="font-bold text-slate-400 uppercase text-xs">Hab. {m.nro_habitacion}</p> */}
                     <p className="font-bold text-slate-400 uppercase text-xs">
                       gasto : {g.descripcion}
                     </p>
-                    {/* Si es efectivo, lo mostramos en la columna de efectivo */}
                     <p className="font-bold text-slate-800 text-right">
                       {g.tipo_pago === "efectivo"
                         ? Number(g.monto).toFixed(2)
                         : "-"}
                     </p>
-
-                    {/* Si es QR, lo mostramos en la columna de QR */}
                     <p className="font-bold text-slate-400 text-right">
                       {g.tipo_pago === "qr" ? Number(g.monto).toFixed(2) : "-"}
                     </p>
@@ -379,7 +405,6 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                     </p>
                   </div>
                 ))}
-                {/* Reemplaza tu bloque actual de ingresosExtra.map con este: */}
                 {ingresosExtra.map((i) => (
                   <div
                     key={i.id}
@@ -391,27 +416,20 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                     <p className="font-bold text-emerald-400 uppercase text-xs">
                       {i.categoria}
                     </p>
-
-                    {/* Columna Efectivo: Muestra el monto solo si el tipo_pago es 'efectivo' */}
                     <p className="font-bold text-slate-800 text-right">
                       {i.tipo_pago === "efectivo"
                         ? Number(i.monto).toFixed(2)
                         : "-"}
                     </p>
-
-                    {/* Columna QR: Muestra el monto solo si el tipo_pago es 'qr' */}
                     <p className="font-bold text-slate-400 text-right">
                       {i.tipo_pago === "qr" ? Number(i.monto).toFixed(2) : "-"}
                     </p>
-
-                    {/* Total del ingreso (siempre positivo) */}
                     <p className="font-black text-emerald-600 text-right">
                       +{Number(i.monto).toFixed(2)}Bs.
                     </p>
                   </div>
                 ))}
               </div>
-              {/*<button onClick={imprimirReportePDF} className="mt-6 w-full py-4 border-2 border-slate-200 rounded-2xl font-bold text-slate-500 hover:bg-slate-50">Descargar Reporte PDF</button> */}
             </div>
           </div>
         )}
