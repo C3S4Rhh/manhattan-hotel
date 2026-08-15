@@ -51,8 +51,13 @@ export const generarReporteCaja = async (
   ]);
 
   // --- Generación PDF ---
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const texto = "Reporte de Cierre de Caja";
+
   doc.setFontSize(18);
-  doc.text("Reporte de Cierre de Caja", 14, 20);
+  const textWidth = doc.getTextWidth(texto);
+  const x = (pageWidth - textWidth) / 2;
+  doc.text(texto, x, 20);
   doc.setFontSize(10);
   doc.text(`Operador: ${usuario.nombre || "de turno"} | Fecha: ${new Date().toLocaleString()}`, 14, 30);
 
