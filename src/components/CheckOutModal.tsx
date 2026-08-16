@@ -10,10 +10,12 @@ export function CheckOutModal({
   hab,
   onClose,
   onSuccess,
+  onVerEstado
 }: {
   hab: any;
   onClose: () => void;
   onSuccess: () => void;
+  onVerEstado: (h: any) => void;
 }) {
   const [huespedesAdicionales, setHuespedesAdicionales] = useState<any[]>([]);
   const [datosHospedaje, setDatosHospedaje] = useState<any>(null);
@@ -24,6 +26,9 @@ export function CheckOutModal({
   const [tiempoRestante, setTiempoRestante] = useState<string>("");
   const [estaAtrasado, setEstaAtrasado] = useState<boolean>(false);
   const [abiertoConfirmarSalida, setAbiertoConfirmarSalida] = useState(false);
+
+  // Estado para guardar el usuario actual de la sesión
+  const [usuarioActual, setUsuarioActual] = useState("");
 
   // Estado local para la justificación del descuento
   const [justificacionDescuento, setJustificacionDescuento] = useState("");
@@ -44,6 +49,17 @@ export function CheckOutModal({
     registrarPagoParcial,
   } = useCheckOut(hab, onSuccess);
 
+  // Obtener el usuario autenticado actual desde Supabase
+  useEffect(() => {
+    const obtenerUsuario = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUsuarioActual(user.user_metadata?.full_name || user.email || "Usuario Anónimo");
+      }
+    };
+    obtenerUsuario();
+  }, []);
+
   // Sincronizar y limpiar el texto guardado para dejar solo la justificación en el input
   useEffect(() => {
     if (registro) {
@@ -55,7 +71,6 @@ export function CheckOutModal({
         "";
 
       if (obsBD) {
-        // Si el texto incluye el formato automático del monto, lo separamos para mostrar solo el texto limpio en el input
         const partes = obsBD.split(" - Descuento:");
         setJustificacionDescuento(partes[0].trim());
       }
@@ -114,7 +129,7 @@ export function CheckOutModal({
   }, [registro?.fecha_ingreso, diasExtra, registro?.cantidad_dias]);
   //fin cronometro
 
-  // Guardar ajustes de días extra, descuento y su justificación unida al monto en tiempo real
+  // Guardar ajustes de días extra, descuento y su justificación unida al monto en tiempo real (con auditoría)
   useEffect(() => {
     const guardarAjustes = async () => {
       if (!registro?.id) return;
@@ -130,15 +145,17 @@ export function CheckOutModal({
           medios_dias_extra: diasExtra,
           descuento_monto: descuentoMonto,
           observaciones: textoObservacion,
+          responsable_ultimo_cambio: usuarioActual,
+          ultima_modificacion_at: new Date().toISOString()
         })
         .eq("id", registro.id);
     };
 
     const timer = setTimeout(guardarAjustes, 300);
     return () => clearTimeout(timer);
-  }, [diasExtra, descuentoMonto, justificacionDescuento, registro?.id]);
+  }, [diasExtra, descuentoMonto, justificacionDescuento, registro?.id, usuarioActual]);
 
-  // Función para manejar el botón Volver asegurando que guarde antes de cerrar
+  // Función para manejar el botón Volver asegurando que guarde con auditoría antes de cerrar
   const handleVolver = async () => {
     if (registro?.id) {
       let textoObservacion = justificacionDescuento;
@@ -151,6 +168,8 @@ export function CheckOutModal({
           medios_dias_extra: diasExtra,
           descuento_monto: descuentoMonto,
           observaciones: textoObservacion,
+          responsable_ultimo_cambio: usuarioActual,
+          ultima_modificacion_at: new Date().toISOString()
         })
         .eq("id", registro.id);
     }
@@ -242,6 +261,12 @@ export function CheckOutModal({
           </p>
           <h2 className="text-3xl font-black italic">HAB. #{hab.numero}</h2>
           <button
+            onClick={() => onVerEstado(hab)}
+            className="text-[10px] w-full py-2 bg-red-600 hover:bg-sky-700 text-white rounded-lg font-bold"
+          >
+            Gestionar Estado de Estancia
+          </button>
+          <button
             onClick={() => setAbiertoCambio(true)}
             className="text-[14px] font-bold text-white/100 underline mt-2 hover:text-white"
           >
@@ -251,7 +276,6 @@ export function CheckOutModal({
 
         <div className="p-8 space-y-6 overflow-y-auto">
           <div className="grid grid-cols-3 gap-3">
-            {/* Cronómetro */}
             <div
               className={`col-span-2 p-3 rounded-xl border text-center ${
                 estaAtrasado
@@ -275,7 +299,6 @@ export function CheckOutModal({
               </p>
             </div>
 
-            {/* Días Contratados */}
             <div className="col-span-1 flex flex-col justify-center items-center bg-blue-50 border border-blue-700 rounded-xl p-2 text-center">
               <p className="text-[7px] font-black text-blue-600 uppercase">
                 Días
@@ -300,7 +323,6 @@ export function CheckOutModal({
             ))}
           </div>
 
-          {/* Sección de huéspedes adicionales */}
           <div className="space-y-4 border-t border-slate-100 pt-4">
             <p className="text-[10px] font-black text-slate-400 uppercase text-center">
               Huéspedes adicionales
@@ -335,7 +357,6 @@ export function CheckOutModal({
             </button>
           </div>
 
-          {/* Controles de Días Extra y Descuento */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div>
@@ -351,26 +372,25 @@ export function CheckOutModal({
                   className="w-full p-2 rounded-lg border text-sm font-bold"
                 />
               </div>
-             <div>
-  <label className="text-[9px] font-black text-slate-500 uppercase">
-    Descuento BS
-  </label>
-  <input
-    type="number"
-    step="0.01"
-    value={descuentoMonto}
-    onWheel={(e) => (e.target as HTMLInputElement).blur()}
-    onChange={(e) =>
-      setDescuentoMonto(
-        Math.max(0, parseFloat(e.target.value) || 0)
-      )
-    }
-    className="w-full p-2 rounded-lg border text-sm font-bold text-emerald-600"
-  />
-</div>
+              <div>
+                <label className="text-[9px] font-black text-slate-500 uppercase">
+                  Descuento BS
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={descuentoMonto}
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                  onChange={(e) =>
+                    setDescuentoMonto(
+                      Math.max(0, parseFloat(e.target.value) || 0)
+                    )
+                  }
+                  className="w-full p-2 rounded-lg border text-sm font-bold text-emerald-600"
+                />
+              </div>
             </div>
 
-            {/* Input para justificar el descuento */}
             {descuentoMonto > 0 && (
               <div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200 space-y-1 animate-fadeIn">
                 <label className="text-[9px] font-black text-amber-700 uppercase ml-1">
