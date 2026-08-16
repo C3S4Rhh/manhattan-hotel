@@ -3,7 +3,7 @@ export const generarReporteCaja = async (
   movimientos: any[],
   gastos: any[],
   ingresosExtra: any[],
-  montoInicial: number, // Nuevo parámetro
+  montoInicial: number,
   totalIngresos: number,
   totalGastos: number,
   totalEnCaja: number
@@ -50,8 +50,9 @@ export const generarReporteCaja = async (
     `+${Number(i.monto).toFixed(2)} Bs.`
   ]);
 
-  // --- Generación PDF ---
+  // --- Generación PDF --- 
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight(); // Altura total de la página para control
   const texto = "Reporte de Cierre de Caja";
 
   doc.setFontSize(18);
@@ -69,47 +70,54 @@ export const generarReporteCaja = async (
     headStyles: { fillColor: [30, 41, 59] },
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY + 10;
+  let finalY = (doc as any).lastAutoTable.finalY + 10;
 
-// Resumen de caja limpio
-doc.setFontSize(12);
-doc.text("Resumen de Caja:", 14, finalY);
-doc.setFontSize(10);
+  // --- CONTROL DE ESPACIO Y NUEVA PÁGINA ---
+  // El bloque de resumen ocupa aproximadamente 85 unidades de altura (Y). 
+  // Si no entra en la página actual, creamos una nueva.
+  const espacioNecesario = 85; 
+  if (finalY + espacioNecesario > pageHeight - 15) {
+    doc.addPage();
+    finalY = 20; // Reiniciamos la posición Y en la nueva hoja
+  }
 
-// Usamos un incremento de 7 en cada línea para evitar encimarlos
-let currentY = finalY + 7;
-doc.text(`Monto Inicial: ${Number(montoInicial).toFixed(2)} Bs.`, 14, currentY);
+  // Resumen de caja limpio
+  doc.setFontSize(12);
+  doc.text("Resumen de Caja:", 14, finalY);
+  doc.setFontSize(10);
 
-currentY += 7;
-doc.text(`Total Ingresos Habitación: ${totalIngresos.toFixed(2)} Bs.`, 14, currentY);
+  let currentY = finalY + 7;
+  doc.text(`Monto Inicial: ${Number(montoInicial).toFixed(2)} Bs.`, 14, currentY);
 
-currentY += 7;
-const totalExtras = ingresosExtra.reduce((a, i) => a + Number(i.monto || 0), 0);
-doc.text(`Total Ingresos Extra: + ${totalExtras.toFixed(2)} Bs.`, 14, currentY);
+  currentY += 7;
+  doc.text(`Total Ingresos Habitación: ${totalIngresos.toFixed(2)} Bs.`, 14, currentY);
 
-currentY += 7;
-doc.text(`Total Ingresos (Habitación + Extras): ${(totalIngresos + ingresosExtra.reduce((a, i) => a + Number(i.monto), 0)).toFixed(2)} Bs.`, 14, currentY);
+  currentY += 7;
+  const totalExtras = ingresosExtra.reduce((a, i) => a + Number(i.monto || 0), 0);
+  doc.text(`Total Ingresos Extra: + ${totalExtras.toFixed(2)} Bs.`, 14, currentY);
+
+  currentY += 7;
+  doc.text(`Total Ingresos (Habitación + Extras): ${(totalIngresos + totalExtras).toFixed(2)} Bs.`, 14, currentY);
   
+  currentY += 7;
+  doc.text(`Total Gastos: - ${totalGastos.toFixed(2)} Bs.`, 14, currentY);
 
-currentY += 7;
-doc.text(`Total Gastos: - ${totalGastos.toFixed(2)} Bs.`, 14, currentY);
+  // Método de Pago
+  currentY += 10;
+  doc.setFontSize(11);
+  doc.text("--- Detalle por Método de Pago ---", 14, currentY);
 
-// Método de Pago
-currentY += 10;
-doc.setFontSize(11);
-doc.text("--- Detalle por Método de Pago ---", 14, currentY);
+  doc.setFontSize(10);
+  currentY += 7;
+  doc.text(`Efectivo en Caja: ${(montoInicial + efecMov + efecExtra - efecGastos).toFixed(2)} Bs.`, 14, currentY);
 
-doc.setFontSize(10);
-currentY += 7;
-doc.text(`Efectivo en Caja: ${(montoInicial + efecMov + efecExtra - efecGastos).toFixed(2)} Bs.`, 14, currentY);
+  currentY += 7;
+  doc.text(`QR Total: ${(qrMov + qrExtra - qrGastos).toFixed(2)} Bs.`, 14, currentY);
 
-currentY += 7;
-doc.text(`QR Total: ${(qrMov + qrExtra - qrGastos).toFixed(2)} Bs.`, 14, currentY);
+  // Balance Final
+  currentY += 10;
+  doc.setFontSize(12);
+  doc.text(`BALANCE FINAL GENERAL: ${totalEnCaja.toFixed(2)} Bs.`, 14, currentY);
 
-// Balance Final
-currentY += 10;
-doc.setFontSize(12);
-doc.text(`BALANCE FINAL GENERAL: ${totalEnCaja.toFixed(2)} Bs.`, 14, currentY);
-
-doc.save(`Cierre_Caja_${new Date().toLocaleDateString()}.pdf`);
+  doc.save(`Cierre_Caja_${new Date().toLocaleDateString()}.pdf`);
 };
