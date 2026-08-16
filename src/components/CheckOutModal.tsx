@@ -23,6 +23,10 @@ export function CheckOutModal({
   const [pagoQR, setPagoQR] = useState(0);
   const [abiertoCambio, setAbiertoCambio] = useState(false);
   const [cargandoRegistro, setCargandoRegistro] = useState(false);
+  
+  // Nuevo estado para prevenir doble clic en registrar pago
+  const [registrandoPago, setRegistrandoPago] = useState(false);
+
   const [tiempoRestante, setTiempoRestante] = useState<string>("");
   const [estaAtrasado, setEstaAtrasado] = useState<boolean>(false);
   const [abiertoConfirmarSalida, setAbiertoConfirmarSalida] = useState(false);
@@ -252,6 +256,18 @@ export function CheckOutModal({
     }
   };
 
+  // Manejador seguro para evitar doble inserción en pagos parciales
+  const handleRegistrarPagoParcial = async () => {
+    if (registrandoPago) return; // Evita clics múltiples
+    setRegistrandoPago(true);
+    try {
+      await registrarPagoParcial(pagoEfectivo, pagoQR);
+      // Opcional: limpiar montos ingresados tras éxito o dejarlos según prefieras
+    } finally {
+      setRegistrandoPago(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -466,11 +482,15 @@ export function CheckOutModal({
             </div>
           </div>
 
+          {/* Botón protegido contra clics múltiples */}
           <button
-            onClick={() => registrarPagoParcial(pagoEfectivo, pagoQR)}
-            className="bg-blue-600 text-white font-black py-3 rounded-lg w-full"
+            onClick={handleRegistrarPagoParcial}
+            disabled={registrandoPago}
+            className={`bg-blue-600 text-white font-black py-3 rounded-lg w-full transition-all ${
+              registrandoPago ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
+            }`}
           >
-            Registrar Pago (Abono)
+            {registrandoPago ? "Procesando Pago..." : "Registrar Pago (Abono)"}
           </button>
 
           <div className="grid gap-3 pt-2">
