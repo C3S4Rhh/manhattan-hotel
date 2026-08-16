@@ -23,6 +23,7 @@ import { GestionIngresos } from "@/components/GestionIngresos";
 import { GestionIngresosHabitaciones } from "@/components/GestionIngresosHabitaciones";
 import { VistaReservas } from "@/components/VistaReservas";
 import { supabase } from "@/lib/supabase";
+import { EstadoEstancias } from "@/components/EstadoEstancias";
 
 export default function Home() {
   const [vista, setVista] = useState<
@@ -39,6 +40,7 @@ export default function Home() {
     | "ingresos"
     | "ingresoshabitaciones"
     | "reservas"
+    | "estadoestancias"
   >("mapa");
 
   const {
@@ -86,7 +88,15 @@ export default function Home() {
   }, [usuarioActivo]);
 
   if (loading) return <div className="bg-slate-900 min-h-screen" />;
-  if (!usuarioActivo) return <Login onLoginSuccess={(user) => { setUsuarioActivo(user); verificarEstadoCaja(); }} />;
+  if (!usuarioActivo)
+    return (
+      <Login
+        onLoginSuccess={(user) => {
+          setUsuarioActivo(user);
+          verificarEstadoCaja();
+        }}
+      />
+    );
 
   return (
     <main className="bg-slate-50 min-h-screen">
@@ -112,7 +122,10 @@ export default function Home() {
               usuarioNombre={usuarioActivo.nombre}
               cantidadHuespedes={huespedes.length}
               onConfigClick={() => setVista("config")}
-              onClientesClick={() => {refrescarClientes();  setVista("clientes");   }}
+              onClientesClick={() => {
+                refrescarClientes();
+                setVista("clientes");
+              }}
               onRegistrosClick={() => setVista("registros")}
               onReservasClick={() => setVista("reservas")}
             />
@@ -192,6 +205,27 @@ export default function Home() {
             <PanelRegistrosHoy />
           </div>
         )}
+
+        {/* 2. Añade la sección para renderizar la vista de EstadoEstancias */}
+        {vista === "estadoestancias" && (
+          <div className="space-y-6">
+            <button
+              onClick={() => setVista("mapa")}
+              className="text-[10px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              ← Volver al mapa de habitaciones
+            </button>
+            <EstadoEstancias
+              hab={habSeleccionada}
+              usuario={usuarioActivo}
+              onClose={() => setVista("mapa")}
+              onSuccess={() => {
+                setVista("mapa");
+                cargarHabitaciones();
+              }}
+            />
+          </div>
+        )}
         {/* 3. VISTA: REGISTRO DE CLIENTES */}
         {vista === "clientes" && (
           <div className="space-y-4">
@@ -265,7 +299,6 @@ export default function Home() {
         {vista === "ingresos" && (
           <div className="p-8">
             <button
-            
               onClick={() => setVista("finanzas")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors mb-4"
             >
@@ -273,7 +306,7 @@ export default function Home() {
             </button>
 
             {/* Usamos el componente consolidado que ya tiene filtros y lógica de impresión */}
-            <GestionIngresos   usuario={usuarioActivo} />
+            <GestionIngresos usuario={usuarioActivo} />
           </div>
         )}
         {vista === "ingresoshabitaciones" && (
@@ -281,12 +314,12 @@ export default function Home() {
             <button
               onClick={() => setVista("finanzas")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] ml-8 mt-8"
-             >
-            ← Volver a Finanzas
+            >
+              ← Volver a Finanzas
             </button>
-          <GestionIngresosHabitaciones usuarioActual={usuarioActivo} />
+            <GestionIngresosHabitaciones usuarioActual={usuarioActivo} />
           </div>
-         )}
+        )}
         {/* 5. VISTA: CAJA CHICA */}
         {vista === "cajachica" && (
           <div className="min-h-screen w-full bg-slate-50 p-6 md:p-12 animate-in fade-in duration-500">
@@ -336,6 +369,10 @@ export default function Home() {
           onSuccess={() => {
             setMostrarModalOut(false);
             cargarHabitaciones();
+          }}
+          onVerEstado={(h) => {
+            setMostrarModalOut(false);
+            setVista("estadoestancias");
           }}
         />
       )}
