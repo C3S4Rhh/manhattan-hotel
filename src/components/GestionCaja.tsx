@@ -304,7 +304,7 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
               </div>
               <div className="bg-emerald-500 p-6 rounded-3xl text-white">
                 <p className="text-[10px] font-black opacity-80 uppercase">
-                  Ingresos +
+                  Ingresos Hab.
                 </p>
                 <p className="text-[18px] text-2xl font-black">
                   {totalIngresos.toFixed(2)}Bs.
@@ -326,8 +326,13 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                   {totalEnCaja.toFixed(2)}Bs.
                 </p>
               </div>
-              <div >
-                
+              <div className="bg-sky-600 p-6 rounded-3xl text-white">
+                <p className="text-[10px] font-black opacity-80 uppercase">
+                  Total extras.
+                </p>
+                <p className="text-[18px] text-2xl font-black">
+                  {totalIngresosExtra.toFixed(2)}Bs.
+                </p>
               </div>
               <div className="bg-orange-600 p-6 rounded-3xl text-white">
                 <p className="text-[10px] font-black opacity-80 uppercase">
@@ -345,8 +350,13 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                   {totalQR.toFixed(2)}Bs.
                 </p>
               </div>
-              <div >
-                
+              <div className="bg-green-600 p-6 rounded-3xl text-white">
+                <p className="text-[10px] font-black opacity-80 uppercase">
+                  Total turno qr y ef.
+                </p>
+                <p className="text-[18px] text-2xl font-black">
+                  {(Number(totalQR) + Number(totalEfectivo)).toFixed(2)}Bs.
+                </p>
               </div>
             </div>
 
