@@ -9,13 +9,14 @@ import { HistorialCajas } from "./HistorialCajas";
 import { GestionEgresos } from "./GestionEgresos";
 
 interface Props {
-  usuario: any;
+  usuario: any; 
   setVista: (vista: any) => void;
   onCajaClick?: () => void;
   onDatosClick?: () => void;
   onHistorialClick?: () => void; // <--- NUEVA PROP
   onCajaChicaClick?: () => void;
   onEgresosClick?: () => void;
+  onCajaChange?: () => void;
 }
 
 // Componente pequeño para el modal de cambio
@@ -74,6 +75,7 @@ export function Navbar({
   onHistorialClick,
   onCajaChicaClick,
   onEgresosClick,
+  onCajaChange,
 }: Props) {
   const [verUsuarios, setVerUsuarios] = useState(false);
   const [verCambiarPass, setVerCambiarPass] = useState(false);
@@ -121,7 +123,7 @@ export function Navbar({
               📊 Finanzas
             </button>
           )}
-          {esAutorizado && (
+          {esAdmin && (
             <button
               onClick={onCajaClick}
               className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-slate-700 uppercase tracking-wider"
@@ -239,12 +241,21 @@ export function Navbar({
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative">
             <button
-              onClick={() => setVerCaja(false)}
+              onClick={() => {
+                setVerCaja(false);
+                if (onCajaChange) onCajaChange(); // <--- 3. Llama al actualizar
+              }}
               className="absolute top-4 right-4 font-black"
             >
               ✕
             </button>
-            <GestionCaja usuario={usuario} onClose={() => setVerCaja(false)} />
+            <GestionCaja 
+              usuario={usuario} 
+              onClose={() => {
+                setVerCaja(false);
+                if (onCajaChange) onCajaChange(); // <--- 4. Llama también aquí al cerrar con éxito
+              }} 
+            />
           </div>
         </div>
       )}
