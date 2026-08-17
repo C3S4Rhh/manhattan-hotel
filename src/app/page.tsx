@@ -108,6 +108,7 @@ export default function Home() {
         onDatosClick={() => setVista("datos")}
         onHistorialClick={() => setVista("historial")}
         onCajaChicaClick={() => setVista("cajachica")}
+        onCajaChange={() => verificarEstadoCaja()}
       />
 
       <div className="p-8">
