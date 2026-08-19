@@ -210,7 +210,13 @@ export function MapaVisualReservas({ onBack }: { onBack: () => void }) {
                   <p className="font-bold text-slate-700">{reservaSeleccionada.nombre_encargado || "Sistema"}</p>
                 </div>
               </div>
-
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase">dia de registro</p>
+                  <p className="font-bold text-slate-700">{reservaSeleccionada.created_at ? reservaSeleccionada.created_at.split("T")[0] : "Sistema"}</p>
+                </div>
+              </div>
+              
               <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
                 <span className="text-base font-bold text-slate-500 uppercase">
                   Adelanto: <strong className="text-slate-800">{reservaSeleccionada.monto_adelanto} Bs.</strong>
