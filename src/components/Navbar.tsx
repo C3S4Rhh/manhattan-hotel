@@ -123,7 +123,7 @@ export function Navbar({
               📊 Finanzas
             </button>
           )}
-          {esAdmin && (
+          {esAutorizado && (
             <button
               onClick={onCajaClick}
               className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-slate-700 uppercase tracking-wider"
