@@ -161,7 +161,7 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
   };
 
   const totalIngresos = movimientos.reduce(
-    (acc, m) => acc + (Number(m.monto_a_cuenta) || 0),
+    (acc, m) => acc + (Number(m.monto_a_cuenta) || Number(m.monto_reserva) || 0),
     0,
   );
   const totalIngresosExtra = ingresosExtra.reduce(
@@ -369,28 +369,31 @@ export function GestionCaja({ usuario, onClose, onCajaChange }: any) {
                 <div className="text-right">Monto</div>
               </div>
               <div className="space-y-3">
-                {movimientos.map((m) => (
-                  <div
-                    key={m.id}
-                    className="grid grid-cols-5 gap-4 items-center p-4 bg-slate-50 rounded-2xl border border-slate-100"
-                  >
-                    <p className="font-bold text-slate-800 uppercase text-xs">
-                      {m.huesped_referencia}
-                    </p>
-                    <p className="font-bold text-slate-400 uppercase text-xs">
-                      {m.observaciones}
-                    </p>
-                    <p className="font-bold text-slate-800 truncate text-right">
-                      {m.monto_efectivo}
-                    </p>
-                    <p className="font-bold text-slate-400 uppercase text-right">
-                      {m.monto_qr}
-                    </p>
-                    <p className="font-black text-emerald-600 text-right">
-                      +{Number(m.monto_a_cuenta).toFixed(2)}Bs.
-                    </p>
-                  </div>
-                ))}
+                {movimientos.map((m) => {
+                  const montoTotalFila = Number(m.monto_a_cuenta) || Number(m.monto_reserva) || 0;
+                  return (
+                    <div
+                      key={m.id}
+                      className="grid grid-cols-5 gap-4 items-center p-4 bg-slate-50 rounded-2xl border border-slate-100"
+                    >
+                      <p className="font-bold text-slate-800 uppercase text-xs">
+                        {m.huesped_referencia}
+                      </p>
+                      <p className="font-bold text-slate-400 uppercase text-xs">
+                        {m.observaciones}
+                      </p>
+                      <p className="font-bold text-slate-800 truncate text-right">
+                        {m.monto_efectivo}
+                      </p>
+                      <p className="font-bold text-slate-400 uppercase text-right">
+                        {m.monto_qr}
+                      </p>
+                      <p className="font-black text-emerald-600 text-right">
+                        +{montoTotalFila.toFixed(2)}Bs.
+                      </p>
+                    </div>
+                  );
+                })}
                 {gastos.map((g) => (
                   <div
                     key={g.id}
