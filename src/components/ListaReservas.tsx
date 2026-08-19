@@ -98,13 +98,16 @@ export function ListaReservas({ onBack }: { onBack: () => void }) {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase">
-                      Día de registro 
-                    </p>
-                    <p className="font-bold text-slate-600 text-sm">
-                      {/* Cortamos la cadena en la "T" para mostrar solo la fecha (YYYY-MM-DD) */}
-                      {r.created_at ? r.created_at.split("T")[0] : "Sistema"}
-                    </p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase">
+                    Día de registro 
+                  </p>
+                  <p className="font-bold text-slate-600 text-sm">
+                    {r.created_at ? new Date(r.created_at).toLocaleString('es-BO', {
+                      timeZone: 'America/La_Paz',
+                      dateStyle: 'short',
+                      timeStyle: 'medium'
+                    }) : "-"}
+                  </p>
                   </div>
                 </div>
 
