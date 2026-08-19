@@ -213,7 +213,13 @@ export function MapaVisualReservas({ onBack }: { onBack: () => void }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[9px] font-black text-slate-400 uppercase">dia de registro</p>
-                  <p className="font-bold text-slate-700">{reservaSeleccionada.created_at ? reservaSeleccionada.created_at.split("T")[0] : "Sistema"}</p>
+                  <p className="font-bold text-slate-600 text-sm">
+                    {reservaSeleccionada.created_at ? new Date(reservaSeleccionada.created_at).toLocaleString('es-BO', {
+                      timeZone: 'America/La_Paz',
+                      dateStyle: 'short',
+                      timeStyle: 'medium'
+                    }) : "-"}
+                  </p> 
                 </div>
               </div>
               
