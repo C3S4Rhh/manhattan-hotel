@@ -141,6 +141,199 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     totalExtrasEfectivo -
     totalEgresos;
 
+  // Función reutilizable para construir el PDF (permite descargar o visualizar)
+  const generarDocumentoPDF = (modo: "descargar" | "visualizar") => {
+    const fechaFormatted = formatearFechaTitulo();
+    const doc = new jsPDF("l", "mm", "a4");
+
+    // Título principal
+    doc.setFontSize(16);
+    doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 148.5, 15, {
+      align: "center",
+    });
+
+    doc.setFontSize(10);
+    doc.text(
+      `Fecha de Apertura: ${new Date(sesionActiva.fecha_apertura).toLocaleString("es-BO")}`,
+      14,
+      22
+    );
+    doc.text(
+      `Fecha de Cierre / Reporte: ${new Date().toLocaleString("es-BO")}`,
+      14,
+      27
+    );
+    doc.text(`Operador ADM: ${usuario?.nombre || "ADM"}`, 14, 32);
+    doc.text(
+      `Monto Inicial en Efectivo: ${sesionActiva.monto_inicial} Bs.`,
+      14,
+      37
+    );
+
+    // 1. Tabla de Movimientos
+    autoTable(doc, {
+      startY: 42,
+      head: [
+        [
+          "Fecha",
+          "Recepcionista",
+          "Factura",
+          "Huésped",
+          "Hab.",
+          "Estadía",
+          "Precio hos.",
+          "Total Pagar",
+          "Efectivo",
+          "QR",
+          "Debe",
+          "A cuenta",
+          "Total",
+          "Obs.",
+        ],
+      ],
+      body: movimientos.map((m) => {
+        const dias = Number(m.cantidad_dias || 0);
+        const extras = Number(m.medios_dias_extra || 0);
+        const totalEstadia = dias + extras;
+        const precioUnitario =
+          dias > 0
+            ? Number(m.monto_total || 0) / dias
+            : Number(m.monto_total || 0);
+        
+        const totalAPagar = totalEstadia * precioUnitario;
+
+        let obsTexto = "-";
+        const partesObs = [];
+        if (m.observaciones) partesObs.push(` ${m.observaciones}`);
+        if (m.observaciones_hospedaje) partesObs.push(`Hosp: ${m.observaciones_hospedaje}`);
+
+        if (partesObs.length > 0) {
+          obsTexto = partesObs.join(" | ");
+        }
+
+        return [
+          new Date(m.fecha).toLocaleDateString("es-BO"),
+          m.usuarios?.nombre || "-",
+          m.factura_numero || " ",
+          m.huesped_referencia || "-",
+          m.habitaciones?.numero || m.nro_habitacion || "-",
+          totalEstadia > 0 ? totalEstadia.toString() : "-",
+          `${precioUnitario.toFixed(2)} Bs.`,
+          `${totalAPagar.toFixed(2)} Bs.`,
+          `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
+          `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
+          `${Number(m.monto_saldo || 0).toFixed(2)} Bs.`,
+          `${Number(m.monto_reserva || 0).toFixed(2)} Bs.`,
+          `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
+          obsTexto,
+        ];
+      }),
+      theme: "striped",
+      headStyles: { fillColor: [30, 41, 59] },
+    });
+
+    let currentY = (doc as any).lastAutoTable.finalY + 8;
+
+    // 2. Tabla de Ingresos Extras
+    if (ingresosExtras.length > 0) {
+      if (currentY > 170) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      doc.setFontSize(11);
+      doc.text("Ingresos Extras Registrados:", 14, currentY);
+      currentY += 4;
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [
+          [
+            "Fecha",
+            "Descripción",
+            "Categoría",
+            "Responsable",
+            "Método",
+            "Monto",
+          ],
+        ],
+        body: ingresosExtras.map((ie) => [
+          new Date(ie.fecha).toLocaleDateString("es-BO"),
+          ie.descripcion || "-",
+          ie.categoria || "-",
+          ie.responsable || "-",
+          ie.tipo_pago ? ie.tipo_pago.toUpperCase() : "EFECTIVO",
+          `${Number(ie.monto || 0).toFixed(2)} Bs.`,
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [217, 119, 6] },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 8;
+    }
+
+    // 3. Totales y Firmas
+    const espacioNecesarioTotales = totalExtras > 0 ? 65 : 55;
+    if (currentY + espacioNecesarioTotales > 195) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    const totalGeneralIngresos =
+      totalEfectivoIngresos + totalQrIngresos + totalExtras;
+
+    doc.setFontSize(11);
+    doc.text(
+      `Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`,
+      14,
+      currentY
+    );
+    doc.text(
+      `Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`,
+      14,
+      currentY + 6
+    );
+
+    let offsetExtra = 0;
+    if (totalExtras > 0) {
+      doc.text(
+        `Total Ingresos Extras (Efectivo: ${totalExtrasEfectivo.toFixed(2)} Bs. | QR: ${totalExtrasQr.toFixed(2)} Bs.): ${totalExtras.toFixed(2)} Bs.`,
+        14,
+        currentY + 12
+      );
+      offsetExtra = 6;
+    }
+
+    doc.text(
+      `TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`,
+      14,
+      currentY + 12 + offsetExtra
+    );
+
+    const signatureY = currentY + 35 + offsetExtra;
+    doc.setLineWidth(0.5);
+    doc.line(100, signatureY, 200, signatureY);
+
+    doc.setFontSize(10);
+    doc.text("Firma de Recepcionista", 150, signatureY + 6, {
+      align: "center",
+    });
+    doc.text(
+      `Nombre: ${usuario?.nombre || "ADMIN"}`,
+      150,
+      signatureY + 11,
+      { align: "center" }
+    );
+
+    if (modo === "descargar") {
+      doc.save(`PLANILLA ${fechaFormatted}.pdf`);
+    } else {
+      const pdfBlob = doc.output("blob");
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, "_blank");
+    }
+  };
+
   return (
     <div className="bg-slate-50 p-4 md:p-8 rounded-3xl shadow-inner min-h-screen space-y-6">
       {/* Cards de KPIs Financieros */}
@@ -203,6 +396,13 @@ export function PanelCaja({ usuario }: { usuario: any }) {
             </p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
+            {/* BOTÓN PARA VISUALIZAR EL PDF (A la izquierda de Cerrar Turno) */}
+            <button
+              onClick={() => generarDocumentoPDF("visualizar")}
+              className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white font-black px-5 py-3 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md"
+            >
+               Ver PDF
+            </button>
             <button
               onClick={() => setMostrarModalCierre(true)}
               className="flex-1 sm:flex-initial bg-rose-600 hover:bg-rose-700 text-white font-black px-5 py-3 rounded-xl text-xs uppercase tracking-widest transition-all"
@@ -218,7 +418,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
             Planilla Detallada de Movimientos
           </h3>
           
-          {/* Contenedor con scroll arriba */}
           <div className="overflow-x-auto [transform:rotateX(180deg)]">
             <div className="[transform:rotateX(180deg)]">
               <table className="w-full min-w-[1350px]">
@@ -395,173 +594,8 @@ export function PanelCaja({ usuario }: { usuario: any }) {
               onSubmit={async (e) => {
                 e.preventDefault();
 
-                const fechaFormatted = formatearFechaTitulo();
-                const doc = new jsPDF("l", "mm", "a4");
-
-                doc.setFontSize(16);
-                doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 148.5, 15, {
-                  align: "center",
-                });
-
-                doc.setFontSize(10);
-                doc.text(
-                  `Fecha de Apertura: ${new Date(sesionActiva.fecha_apertura).toLocaleString("es-BO")}`,
-                  14,
-                  22,
-                );
-                doc.text(
-                  `Fecha de Cierre: ${new Date().toLocaleString("es-BO")}`,
-                  14,
-                  27,
-                );
-                doc.text(`Operador ADM: ${usuario?.nombre || "ADM"}`, 14, 32);
-                doc.text(
-                  `Monto Inicial en Efectivo: ${sesionActiva.monto_inicial} Bs.`,
-                  14,
-                  37,
-                );
-
-                autoTable(doc, {
-                  startY: 42,
-                  head: [
-                    [
-                      "Fecha",
-                      "Recepcionista",
-                      "Factura",
-                      "Huésped",
-                      "Hab.",
-                      "Estadía",
-                      "Precio hos.",
-                      "Total Pagar",
-                      "Efectivo",
-                      "QR",
-                      "Saldo",
-                      "A cuenta",
-                      "Total",
-                      "Obs.",
-                    ],
-                  ],
-                  body: movimientos.map((m) => {
-                    const dias = Number(m.cantidad_dias || 0);
-                    const extras = Number(m.medios_dias_extra || 0);
-                    const totalEstadia = dias + extras;
-                    const precioUnitario =
-                      dias > 0
-                        ? Number(m.monto_total || 0) / dias
-                        : Number(m.monto_total || 0);
-                    
-                    const totalAPagar = totalEstadia * precioUnitario;
-
-                    let obsTexto = "-";
-                    const partesObs = [];
-                    if (m.observaciones)
-                      partesObs.push(`Mov: ${m.observaciones}`);
-                    if (m.observaciones_hospedaje)
-                      partesObs.push(`Hosp: ${m.observaciones_hospedaje}`);
-
-                    if (partesObs.length > 0) {
-                      obsTexto = partesObs.join(" | ");
-                    }
-
-                    return [
-                      new Date(m.fecha).toLocaleDateString("es-BO"),
-                      m.usuarios?.nombre || "-",
-                      m.factura_numero || " ",
-                      m.huesped_referencia || "-",
-                      m.habitaciones?.numero || m.nro_habitacion || "-",
-                      totalEstadia > 0 ? totalEstadia.toString() : "-",
-                      `${precioUnitario.toFixed(2)} Bs.`,
-                      `${totalAPagar.toFixed(2)} Bs.`,
-                      `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
-                      `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
-                      `${Number(m.monto_saldo || 0).toFixed(2)} Bs.`,
-                      `${Number(m.monto_reserva || 0).toFixed(2)} Bs.`,
-                      `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
-                      obsTexto,
-                    ];
-                  }),
-                  theme: "striped",
-                  headStyles: { fillColor: [30, 41, 59] },
-                });
-
-                let currentY = (doc as any).lastAutoTable.finalY + 8;
-
-                if (ingresosExtras.length > 0) {
-                  doc.setFontSize(11);
-                  doc.text("Ingresos Extras Registrados:", 14, currentY);
-                  currentY += 4;
-
-                  autoTable(doc, {
-                    startY: currentY,
-                    head: [
-                      [
-                        "Fecha",
-                        "Descripción",
-                        "Categoría",
-                        "Responsable",
-                        "Método",
-                        "Monto",
-                      ],
-                    ],
-                    body: ingresosExtras.map((ie) => [
-                      new Date(ie.fecha).toLocaleDateString("es-BO"),
-                      ie.descripcion || "-",
-                      ie.categoria || "-",
-                      ie.responsable || "-",
-                      ie.tipo_pago ? ie.tipo_pago.toUpperCase() : "EFECTIVO",
-                      `${Number(ie.monto || 0).toFixed(2)} Bs.`,
-                    ]),
-                    theme: "grid",
-                    headStyles: { fillColor: [217, 119, 6] },
-                  });
-
-                  currentY = (doc as any).lastAutoTable.finalY + 8;
-                }
-
-                const totalGeneralIngresos =
-                  totalEfectivoIngresos + totalQrIngresos + totalExtras;
-
-                doc.setFontSize(11);
-                doc.text(
-                  `Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`,
-                  14,
-                  currentY,
-                );
-                doc.text(
-                  `Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`,
-                  14,
-                  currentY + 6,
-                );
-                if (totalExtras > 0) {
-                  doc.text(
-                    `Total Ingresos Extras (Efectivo: ${totalExtrasEfectivo.toFixed(2)} Bs. | QR: ${totalExtrasQr.toFixed(2)} Bs.): ${totalExtras.toFixed(2)} Bs.`,
-                    14,
-                    currentY + 12,
-                  );
-                  currentY += 6;
-                }
-
-                doc.text(
-                  `TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`,
-                  14,
-                  currentY + 12,
-                );
-
-                const signatureY = currentY + 45;
-                doc.setLineWidth(0.5);
-                doc.line(100, signatureY, 200, signatureY);
-
-                doc.setFontSize(10);
-                doc.text("Firma de Recepcionista", 150, signatureY + 6, {
-                  align: "center",
-                });
-                doc.text(
-                  `Nombre: ${usuario?.nombre || "Cesar"}`,
-                  150,
-                  signatureY + 11,
-                  { align: "center" },
-                );
-                doc.save(`PLANILLA ${fechaFormatted}.pdf`);
+                // Descarga el PDF automáticamente al confirmar el cierre
+                generarDocumentoPDF("descargar");
 
                 const snapshotDetalle = {
                   movimientos,
