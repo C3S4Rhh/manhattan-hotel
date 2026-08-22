@@ -141,18 +141,18 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     totalExtrasEfectivo -
     totalEgresos;
 
-  // Función reutilizable para construir el PDF (permite descargar o visualizar)
+  // Función reutilizable para construir el PDF en formato Carta Horizontal ("l", "letter")
   const generarDocumentoPDF = (modo: "descargar" | "visualizar") => {
     const fechaFormatted = formatearFechaTitulo();
-    const doc = new jsPDF("l", "mm", "a4");
+    const doc = new jsPDF("l", "mm", "letter"); // "l" = landscape (horizontal), tamaño letter
 
-    // Título principal
-    doc.setFontSize(16);
-    doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 148.5, 15, {
+    // Título principal (Centro aproximado de hoja carta horizontal es ~139.5 mm)
+    doc.setFontSize(14);
+    doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 139.5, 15, {
       align: "center",
     });
 
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.text(
       `Fecha de Apertura: ${new Date(sesionActiva.fecha_apertura).toLocaleString("es-BO")}`,
       14,
@@ -185,7 +185,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
           "Total Pagar",
           "Efectivo",
           "QR",
-          "Debe",
           "A cuenta",
           "Total",
           "Obs.",
@@ -222,7 +221,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
           `${totalAPagar.toFixed(2)} Bs.`,
           `${Number(m.monto_efectivo || 0).toFixed(2)} Bs.`,
           `${Number(m.monto_qr || 0).toFixed(2)} Bs.`,
-          `${Number(m.monto_saldo || 0).toFixed(2)} Bs.`,
           `${Number(m.monto_reserva || 0).toFixed(2)} Bs.`,
           `${Number(m.monto_a_cuenta || 0).toFixed(2)} Bs.`,
           obsTexto,
@@ -230,18 +228,19 @@ export function PanelCaja({ usuario }: { usuario: any }) {
       }),
       theme: "striped",
       headStyles: { fillColor: [30, 41, 59] },
+      styles: { fontSize: 8 },
     });
 
     let currentY = (doc as any).lastAutoTable.finalY + 8;
 
     // 2. Tabla de Ingresos Extras
     if (ingresosExtras.length > 0) {
-      if (currentY > 170) {
+      if (currentY > 175) {
         doc.addPage();
         currentY = 20;
       }
 
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.text("Ingresos Extras Registrados:", 14, currentY);
       currentY += 4;
 
@@ -267,60 +266,97 @@ export function PanelCaja({ usuario }: { usuario: any }) {
         ]),
         theme: "grid",
         headStyles: { fillColor: [217, 119, 6] },
+        styles: { fontSize: 8 },
       });
 
       currentY = (doc as any).lastAutoTable.finalY + 8;
     }
 
-    // 3. Totales y Firmas
+    // 3. Totales y Firmas (Límite vertical en horizontal carta es ~215mm)
     const espacioNecesarioTotales = totalExtras > 0 ? 65 : 55;
-    if (currentY + espacioNecesarioTotales > 195) {
+    if (currentY + espacioNecesarioTotales > 190) {
       doc.addPage();
       currentY = 20;
     }
 
     const totalGeneralIngresos =
       totalEfectivoIngresos + totalQrIngresos + totalExtras;
+const totalGIngresosHab =
+      totalEfectivoIngresos + totalQrIngresos;
 
-    doc.setFontSize(11);
-    doc.text(
-      `Total Ingresos en Efectivo: ${totalEfectivoIngresos.toFixed(2)} Bs.`,
+    doc.setFontSize(8);
+     doc.setFont("helvetica", "bold");
+     doc.text(
+      `TOTAL HAB: ${totalGIngresosHab.toFixed(2)} Bs.`,
       14,
       currentY
     );
+    doc.setFont("helvetica", "normal");
     doc.text(
-      `Total Ingresos por QR: ${totalQrIngresos.toFixed(2)} Bs.`,
+      `Total Ef. hab: ${totalEfectivoIngresos.toFixed(2)} Bs.`,
       14,
-      currentY + 6
+      currentY + 4
+    );
+    doc.text(
+      `Total QR hab: ${totalQrIngresos.toFixed(2)} Bs.`,
+      14,
+      currentY + 8
     );
 
     let offsetExtra = 0;
-    if (totalExtras > 0) {
+    if (totalExtras > 0)
+       {
+         doc.setFont("helvetica", "bold");
       doc.text(
-        `Total Ingresos Extras (Efectivo: ${totalExtrasEfectivo.toFixed(2)} Bs. | QR: ${totalExtrasQr.toFixed(2)} Bs.): ${totalExtras.toFixed(2)} Bs.`,
+        `TOTAL EXTRAS :${totalExtras.toFixed(2)} Bs.`,
         14,
         currentY + 12
+      );
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Total Extras Ef: ${totalExtrasEfectivo.toFixed(2)} Bs.`,
+        14,
+        currentY + 16
+      );
+      doc.text(
+        `Total Extras QR: ${totalExtrasQr.toFixed(2)} Bs.`,
+        14,
+        currentY + 20
       );
       offsetExtra = 6;
     }
 
-    doc.text(
-      `TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`,
-      14,
-      currentY + 12 + offsetExtra
-    );
+     doc.setFont("helvetica", "bold");
+     doc.text(
+        `TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`,
+        14,
+        currentY + 18 + offsetExtra
+      );
+     doc.setFont("helvetica", "normal");
+     
+     doc.text(
+        `Total QR: ${(totalExtrasQr + totalQrIngresos).toFixed(2)} Bs.`,
+        14,
+        currentY + 28
+      );
+      doc.text(
+        `Total EF: ${(totalExtrasEfectivo + totalEfectivoIngresos).toFixed(2)} Bs.`,
+        14,
+        currentY + 32
+      );
 
     const signatureY = currentY + 35 + offsetExtra;
     doc.setLineWidth(0.5);
-    doc.line(100, signatureY, 200, signatureY);
+    // Línea de firma centrada para hoja carta horizontal (desde X=100 hasta X=178)
+    doc.line(100, signatureY, 178, signatureY);
 
-    doc.setFontSize(10);
-    doc.text("Firma de Recepcionista", 150, signatureY + 6, {
+    doc.setFontSize(9);
+    doc.text("Firma de Recepcionista", 139.5, signatureY + 6, {
       align: "center",
     });
     doc.text(
       `Nombre: ${usuario?.nombre || "ADMIN"}`,
-      150,
+      139.5,
       signatureY + 11,
       { align: "center" }
     );
@@ -396,7 +432,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
             </p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            {/* BOTÓN PARA VISUALIZAR EL PDF (A la izquierda de Cerrar Turno) */}
             <button
               onClick={() => generarDocumentoPDF("visualizar")}
               className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white font-black px-5 py-3 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md"
@@ -594,7 +629,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
               onSubmit={async (e) => {
                 e.preventDefault();
 
-                // Descarga el PDF automáticamente al confirmar el cierre
                 generarDocumentoPDF("descargar");
 
                 const snapshotDetalle = {
