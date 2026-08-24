@@ -1,8 +1,10 @@
-'use client'
+'use client';
 import { useTiempoSalida } from "@/hook/useTiempoSalida";
-
+import { useListaHuespedes } from "@/hook/useListaHuespedes"; // Importamos el hook aquí
 export function HabitacionCard({ hab, onSelect, cajaAbierta = true }: { hab: any, onSelect: (h: any) => void, cajaAbierta?: boolean }) {
   
+  const { huespedes } = useListaHuespedes();
+
   const CONFIG_ESTADOS: Record<string, { border: string, bg: string, text: string, label: string, shadow: string }> = {
     'reserva': { 
       border: 'border-violet-500', 
@@ -101,6 +103,16 @@ export function HabitacionCard({ hab, onSelect, cajaAbierta = true }: { hab: any
 
   const mostrarAlerta = hab.estado_actual === 'O' && horasRestantes > 0 && horasRestantes <= 4;
 
+  // Calculamos el total filtrando directamente los huéspedes que coinciden con el número de esta habitación
+  const totalHuespedesDinamico = huespedes.filter(h => h.habitacion_nro === String(hab.numero)).length;
+
+  const totalClientes = 
+    (totalHuespedesDinamico > 0 ? totalHuespedesDinamico : null) ?? 
+    hospedajeActivo?.nro_pax ?? 
+    hab.nro_pax ?? 
+    hospedajeActivo?.huespedes?.length ?? 
+    (estadoNormalizado === 'O' ? 1 : 0); 
+
   return (
     <div 
       onClick={() => {
@@ -118,20 +130,34 @@ export function HabitacionCard({ hab, onSelect, cajaAbierta = true }: { hab: any
           <h3 className="text-3xl font-black text-slate-800 tracking-tighter">#{hab.numero}</h3>
           <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest italic">{hab.tipo}</p>
         </div>
-        {mostrarAlerta && (
-          <span className="animate-bounce text-xl" title="Quedan menos de 4 horas">
-            🔔
+        
+        <div className="flex items-center gap-2">
+          {mostrarAlerta && (
+            <span className="animate-bounce text-xl" title="Quedan menos de 4 horas">
+              🔔
+            </span>
+          )}
+          
+          {/* Badge de Estado */}
+          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${estilo.text} border-current/20`}>
+            • {estilo.label}
           </span>
-        )}
-        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${estilo.text} border-current/20`}>
-          • {estilo.label}
-        </span>
+        </div>
       </div>
 
       <div className="mb-6 flex flex-col gap-2">
-        <span className={`self-start px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${estiloLimpieza.bg} ${estiloLimpieza.text}`}>
-          {estiloLimpieza.label}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`self-start px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${estiloLimpieza.bg} ${estiloLimpieza.text}`}>
+            {estiloLimpieza.label}
+          </span>
+
+          {/* Indicador de cantidad de clientes registrados en la habitación */}
+          {estadoNormalizado === 'O' && totalClientes > 0 && (
+            <span className="self-start px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter bg-yellow-500 text-white shadow-sm flex items-center gap-1">
+              <span>👥</span> {totalClientes} {totalClientes === 1 ? 'Huésped' : 'Huéspedes'}
+            </span>
+          )}
+        </div>
         
         {hab.observaciones && (
           <div className="bg-amber-50 border-l-4 border-amber-400 p-2 rounded-r-lg">
