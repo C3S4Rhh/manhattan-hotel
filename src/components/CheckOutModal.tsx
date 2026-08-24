@@ -320,7 +320,7 @@ export function CheckOutModal({
                 Días
               </p>
               <p className="text-xl font-black text-blue-700">
-                {registro?.cantidad_dias || 0}
+                {diasExtra+registro?.cantidad_dias || 0}
               </p>
             </div>
           </div>
