@@ -83,6 +83,9 @@ export function Navbar({
   const [verHistorial, setVerHistorial] = useState(false);
   const [verCaja, setVerCaja] = useState(false);
 
+  // Estado para alternar la visibilidad de los botones
+  const [isOpen, setIsOpen] = useState(false);
+
   const handleLogout = () => {
     authService.logout();
     window.location.reload();
@@ -103,7 +106,8 @@ export function Navbar({
   return (
     <>
       <nav className="bg-slate-900 text-white p-4 px-8 flex justify-between items-center sticky top-0 z-50 shadow-2xl">
-        <div className="flex items-center gap-4">
+        {/* Lado Izquierdo: Solo Logo */}
+        <div className="flex items-center gap-2">
           <div className="bg-blue-600 p-2 rounded-lg rotate-3">
             <span className="text-xl font-black italic">M</span>
           </div>
@@ -114,76 +118,95 @@ export function Navbar({
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          {esAutorizado && (
-            <button
-              onClick={() => setVista("finanzas")} // Cambiado a 'finanzas'
-              className="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-rose-500/20 uppercase tracking-wider"
-             >
-              📊 Finanzas
-            </button>
-          )}
-          {esAutorizado && (
-            <button
-              onClick={onCajaClick}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-slate-700 uppercase tracking-wider"
-            >
-              💼 Admin Caja
-            </button>
-          )}
-          {esAutorizado && (
-            <button
-              onClick={onCajaChicaClick} // <--- LLAMA A LA NUEVA FUNCIÓN
-              className="bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-indigo-500/20 uppercase tracking-wider"
-            >
-              💰 Caja Chica
-            </button>
-          )}
-          {esAutorizado && onDatosClick && (
-            <button
-              onClick={onDatosClick}
-              className="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-emerald-500/20 uppercase tracking-wider"
-            >
-              📊 Datos
-            </button>
-          )}
+        {/* Lado Derecho: Botón de Menú (antes de los módulos), Botones desplegables, Usuario y Turno */}
+        <div className="flex items-center gap-4">
+          
+          {/* Botón Hamburguesa ubicado antes del grupo de administración */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-black transition-all border border-slate-700 flex items-center gap-1.5"
+            title="Ocultar/Mostrar opciones"
+          >
+            <span>{isOpen ? "✕" : "☰"}</span>
+            <span className="text-[10px] uppercase hidden sm:inline">{isOpen ? "Cerrar" : "Menú"}</span>
+          </button>
 
-          {puedeGestionarCaja && (
-            <button
-              onClick={() => setVerCaja(true)}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-slate-700 uppercase tracking-wider"
-            >
-              💼 Caja
-            </button>
-          )}
+          {/* Grupo de botones que se despliegan de forma fluida hacia la izquierda */}
+          <div 
+            className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out ${
+              isOpen ? "max-w-[1000px] opacity-100 mr-2" : "max-w-0 opacity-0 mr-0 pointer-events-none"
+            }`}
+          >
+            {esAutorizado && (
+              <button
+                onClick={() => setVista("finanzas")}
+                className="bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-rose-500/20 uppercase tracking-wider whitespace-nowrap"
+              >
+                📊 Finanzas
+              </button>
+            )}
+            {esAutorizado && (
+              <button
+                onClick={onCajaClick}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-slate-700 uppercase tracking-wider whitespace-nowrap"
+              >
+                💼 Admin Caja
+              </button>
+            )}
+            {esAutorizado && (
+              <button
+                onClick={onCajaChicaClick}
+                className="bg-indigo-500/10 hover:bg-indigo-600 text-indigo-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-indigo-500/20 uppercase tracking-wider whitespace-nowrap"
+              >
+                💰 Caja Chica
+              </button>
+            )}
+            {esAutorizado && onDatosClick && (
+              <button
+                onClick={onDatosClick}
+                className="bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white px-4 py-2 rounded-xl text-[9px] font-black transition-all border border-emerald-500/20 uppercase tracking-wider whitespace-nowrap"
+              >
+                📊 Datos
+              </button>
+            )}
 
-          {esAutorizado && (
-            <button
-              onClick={onHistorialClick} // <--- LLAMA A LA FUNCIÓN DEL PADRE
-              className="bg-purple-500/10 hover:bg-purple-600 text-purple-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-purple-500/20 uppercase tracking-wider"
-            >
-              📜 Historial Caja
-            </button>
-          )}
+            {puedeGestionarCaja && (
+              <button
+                onClick={() => setVerCaja(true)}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-slate-700 uppercase tracking-wider whitespace-nowrap"
+              >
+                💼 Caja
+              </button>
+            )}
 
-          {/* Botón Cambios de Habitación (Auditoría) */}
-          {esAutorizado && (
-            <button
-              onClick={() => setVerHistorial(true)}
-              className="bg-amber-500/10 hover:bg-amber-600 text-amber-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-amber-500/20 uppercase tracking-wider"
-            >
-              🔄 cambios de hab.
-            </button>
-          )}
-          {esAdmin && (
-            <button
-              onClick={() => setVerUsuarios(true)}
-              className="bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-[15px] font-black transition-all border border-blue-500/20 uppercase tracking-wider"
-            >
-              👥
-            </button>
-          )}
+            {esAutorizado && (
+              <button
+                onClick={onHistorialClick}
+                className="bg-purple-500/10 hover:bg-purple-600 text-purple-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-purple-500/20 uppercase tracking-wider whitespace-nowrap"
+              >
+                📜 Historial Caja
+              </button>
+            )}
 
+            {esAutorizado && (
+              <button
+                onClick={() => setVerHistorial(true)}
+                className="bg-amber-500/10 hover:bg-amber-600 text-amber-400 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black transition-all border border-amber-500/20 uppercase tracking-wider whitespace-nowrap"
+              >
+                🔄 cambios de hab.
+              </button>
+            )}
+            {esAdmin && (
+              <button
+                onClick={() => setVerUsuarios(true)}
+                className="bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-[15px] font-black transition-all border border-blue-500/20 uppercase tracking-wider whitespace-nowrap"
+              >
+                👥
+              </button>
+            )}
+          </div>
+
+          {/* Información del Usuario */}
           <div className="text-right border-r border-slate-700 pr-6 hidden md:block">
             <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
               {usuario?.rol || "Operador"}
@@ -201,6 +224,7 @@ export function Navbar({
             </div>
           </div>
 
+          {/* Botón Cerrar Turno */}
           <button
             onClick={handleLogout}
             className="bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white px-5 py-2 rounded-xl text-[10px] font-black transition-all border border-rose-500/20 uppercase"
@@ -209,6 +233,7 @@ export function Navbar({
           </button>
         </div>
       </nav>
+
       {/* Modal Historial de Cambios */}
       {verHistorial && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
@@ -223,6 +248,7 @@ export function Navbar({
           </div>
         </div>
       )}
+
       {/* Modal Personal */}
       {verUsuarios && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
@@ -237,13 +263,14 @@ export function Navbar({
           </div>
         </div>
       )}
+
       {verCaja && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 relative">
             <button
               onClick={() => {
                 setVerCaja(false);
-                if (onCajaChange) onCajaChange(); // <--- 3. Llama al actualizar
+                if (onCajaChange) onCajaChange();
               }}
               className="absolute top-4 right-4 font-black"
             >
@@ -253,12 +280,13 @@ export function Navbar({
               usuario={usuario} 
               onClose={() => {
                 setVerCaja(false);
-                if (onCajaChange) onCajaChange(); // <--- 4. Llama también aquí al cerrar con éxito
+                if (onCajaChange) onCajaChange();
               }} 
             />
           </div>
         </div>
       )}
+
       {/* Modal Cambiar Password */}
       {verCambiarPass && (
         <CambiarPasswordModal onClose={() => setVerCambiarPass(false)} />
