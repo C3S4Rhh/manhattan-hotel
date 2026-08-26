@@ -56,7 +56,7 @@ export function GestionIngresosHabitaciones({ usuarioActual }: { usuarioActual?:
 
     // Ajusta el nombre de la tabla si es distinto en tu base de datos (ej: 'movimientos_habitaciones', 'caja', etc.)
     const { error } = await supabase
-      .from('movimientos_habitaciones') 
+      .from('caja_movimientos') 
       .delete()
       .eq('id', id);
 
