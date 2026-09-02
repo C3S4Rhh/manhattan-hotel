@@ -62,7 +62,7 @@ export default function Home() {
     habitaciones,
   } = useDashboard();
   const [refresh, setRefresh] = useState(0);
-  const { huespedes } = useListaHuespedes();
+  const { huespedes, cargando, refrescar:refrescarHuespedes } = useListaHuespedes();
   const { todosLosClientes, refrescar: refrescarClientes } =
     useClientesGlobal();
 
@@ -117,7 +117,10 @@ export default function Home() {
           <>
             <DashboardHeader
               verHuespedes={verHuespedes}
-              setVerHuespedes={setVerHuespedes}
+              setVerHuespedes={(val) => {
+                setVerHuespedes(val);
+                if (val) refrescarHuespedes(); // 👈 Actualiza al abrir el directorio
+              }}
               soloOcupadas={soloOcupadas}
               setSoloOcupadas={setSoloOcupadas}
               usuarioNombre={usuarioActivo.nombre}
@@ -360,6 +363,7 @@ export default function Home() {
             setMostrarModalIn(false);
             cargarHabitaciones();
             refrescarClientes();
+            refrescarHuespedes();
           }}
         />
       )}
@@ -370,6 +374,7 @@ export default function Home() {
           onSuccess={() => {
             setMostrarModalOut(false);
             cargarHabitaciones();
+            refrescarHuespedes();
           }}
           onVerEstado={(h) => {
             setMostrarModalOut(false);
@@ -380,3 +385,4 @@ export default function Home() {
     </main>
   );
 }
+
