@@ -12,7 +12,7 @@ interface HeaderProps {
   cantidadHuespedes: number;
 
   onConfigClick: () => void;
-  onClientesClick: () => void;
+  onHistorialesClick: () => void; 
   onRegistrosClick: () => void;
   onReservasClick: () => void;
 }
@@ -32,7 +32,7 @@ export function DashboardHeader({
   usuarioNombre,
   cantidadHuespedes,
   onConfigClick,
-  onClientesClick,
+  onHistorialesClick,
   onRegistrosClick,
   onReservasClick,
 }: HeaderProps) {
@@ -41,7 +41,6 @@ export function DashboardHeader({
   const [nuevoTexto, setNuevoTexto] = useState("");
   const [cargando, setCargando] = useState(false);
 
-  // Cargar notas desde la tabla notas_turno
   const cargarNotas = async () => {
     const { data, error } = await supabase
       .from("notas_turno")
@@ -57,7 +56,6 @@ export function DashboardHeader({
     cargarNotas();
   }, []);
 
-  // Guardar nueva nota
   const agregarNota = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoTexto.trim()) return;
@@ -79,7 +77,6 @@ export function DashboardHeader({
     setCargando(false);
   };
 
-  // Eliminar nota de la base de datos
   const eliminarNota = async (id: string) => {
     if (!confirm("¿Deseas eliminar este aviso permanentemente?")) return;
 
@@ -118,9 +115,6 @@ export function DashboardHeader({
             className="flex items-center gap-3 bg-amber-50 p-1 px-4 rounded-2xl shadow-sm border border-amber-100 hover:bg-amber-100 transition-all relative"
           >
             <div className="bg-white p-1.5 rounded-lg shadow-sm">📝</div>
-            <span className="text-[11px] font-black uppercase tracking-wider text-amber-800">
-             
-            </span>
             {notas.length > 0 && (
               <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded-full shadow animate-pulse">
                 {notas.length}
@@ -186,14 +180,14 @@ export function DashboardHeader({
             {soloOcupadas ? "Ver Todo" : "🔔 Pendientes de Salida"}
           </button>
 
-          {/* Botón de Registros de Clientes */}
+          {/* Botón de Centro de Historiales (Reemplazó a Reg. de Clientes) */}
           <button
-            onClick={onClientesClick}
+            onClick={onHistorialesClick}
             className="flex items-center gap-3 bg-white p-1 px-5 rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-all"
           >
-            <div className="bg-blue-50 p-1.5 rounded-lg">📁</div>
+            <div className="bg-indigo-50 p-1.5 rounded-lg">📜</div>
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-              Reg. de Clientes
+              Hist. Clientes
             </span>
           </button>
 
@@ -213,9 +207,7 @@ export function DashboardHeader({
       {/* --- MODAL DE AVISOS Y NOTAS DE TURNO --- */}
       {isNotaOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh] animate-in fade-in zoom-in duration-200">
-            
-            {/* Header del Modal */}
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-100 flex flex-col max-h-[85vh]">
             <div className="flex justify-between items-center px-6 py-4 bg-amber-50 border-b border-amber-100">
               <div className="flex items-center gap-2">
                 <span className="text-xl">📌</span>
@@ -231,7 +223,6 @@ export function DashboardHeader({
               </button>
             </div>
 
-            {/* Formulario para publicar nueva nota */}
             <form onSubmit={agregarNota} className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
               <textarea
                 value={nuevoTexto}
@@ -251,7 +242,6 @@ export function DashboardHeader({
               </div>
             </form>
 
-            {/* Lista de notas registradas */}
             <div className="p-6 overflow-y-auto flex flex-col gap-3 flex-1">
               {notas.length === 0 ? (
                 <p className="text-center text-xs text-slate-400 py-8">
@@ -291,7 +281,6 @@ export function DashboardHeader({
               )}
             </div>
 
-            {/* Footer del Modal */}
             <div className="flex justify-end px-6 py-3 bg-slate-50 border-t border-slate-100">
               <button
                 onClick={() => setIsNotaOpen(false)}
@@ -300,7 +289,6 @@ export function DashboardHeader({
                 Cerrar
               </button>
             </div>
-
           </div>
         </div>
       )}
