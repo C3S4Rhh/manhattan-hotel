@@ -22,6 +22,8 @@ import { VistaFinanzas } from "@/components/VistaFinanzas";
 import { GestionIngresos } from "@/components/GestionIngresos";
 import { GestionIngresosHabitaciones } from "@/components/GestionIngresosHabitaciones";
 import { VistaReservas } from "@/components/VistaReservas";
+import { VistaCentroHistorial } from "@/components/VistaCentroHistorial";
+import HistorialHospedajes from "@/components/HistorialHospedajes";
 import { supabase } from "@/lib/supabase";
 import { EstadoEstancias } from "@/components/EstadoEstancias";
 
@@ -33,6 +35,8 @@ export default function Home() {
     | "caja"
     | "datos"
     | "historial"
+    | "centrohistorial"
+    | "historialhospedajes"
     | "cajachica"
     | "registros"
     | "finanzas"
@@ -62,7 +66,11 @@ export default function Home() {
     habitaciones,
   } = useDashboard();
   const [refresh, setRefresh] = useState(0);
-  const { huespedes, cargando, refrescar:refrescarHuespedes } = useListaHuespedes();
+  const {
+    huespedes,
+    cargando,
+    refrescar: refrescarHuespedes,
+  } = useListaHuespedes();
   const { todosLosClientes, refrescar: refrescarClientes } =
     useClientesGlobal();
 
@@ -119,17 +127,14 @@ export default function Home() {
               verHuespedes={verHuespedes}
               setVerHuespedes={(val) => {
                 setVerHuespedes(val);
-                if (val) refrescarHuespedes(); // 👈 Actualiza al abrir el directorio
+                if (val) refrescarHuespedes();
               }}
               soloOcupadas={soloOcupadas}
               setSoloOcupadas={setSoloOcupadas}
               usuarioNombre={usuarioActivo.nombre}
               cantidadHuespedes={huespedes.length}
               onConfigClick={() => setVista("config")}
-              onClientesClick={() => {
-                refrescarClientes();
-                setVista("clientes");
-              }}
+              onHistorialesClick={() => setVista("centrohistorial")}
               onRegistrosClick={() => setVista("registros")}
               onReservasClick={() => setVista("reservas")}
             />
@@ -161,7 +166,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* Mensaje de vacío solo en modo mapa */}
             {!verHuespedes &&
               soloOcupadas &&
               habitacionesFiltradas.length === 0 && (
@@ -187,6 +191,7 @@ export default function Home() {
             />
           </div>
         )}
+
         {vista === "reservas" && (
           <div className="space-y-6">
             <button
@@ -198,6 +203,7 @@ export default function Home() {
             <VistaReservas />
           </div>
         )}
+
         {vista === "registros" && (
           <div className="space-y-6">
             <button
@@ -210,7 +216,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* 2. Añade la sección para renderizar la vista de EstadoEstancias */}
         {vista === "estadoestancias" && (
           <div className="space-y-6">
             <button
@@ -230,14 +235,48 @@ export default function Home() {
             />
           </div>
         )}
-        {/* 3. VISTA: REGISTRO DE CLIENTES */}
-        {vista === "clientes" && (
+
+        {/* 3. VISTA: CENTRO DE HISTORIALES (Incluye Historial de Hospedajes y Reg. de Clientes) */}
+        {vista === "centrohistorial" && (
           <div className="space-y-4">
             <button
               onClick={() => setVista("mapa")}
               className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
             >
               ← Volver al Mapa de Habitaciones
+            </button>
+            <VistaCentroHistorial
+              usuario={usuarioActivo}
+              onSelect={(v) => {
+                if (v === "clientes") refrescarClientes();
+                setVista(v);
+              }}
+            />
+          </div>
+        )}
+
+        {/* 4. VISTA: HISTORIAL DE HOSPEDAJES */}
+        {vista === "historialhospedajes" && (
+          <div className="space-y-4">
+            <button
+              onClick={() => setVista("centrohistorial")}
+              className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
+            >
+              ← Volver al Centro de Historiales
+            </button>
+            <HistorialHospedajes usuario={usuarioActivo} />{" "}
+            {/* 👈 Aquí pasas el usuarioactivo */}
+          </div>
+        )}
+
+        {/* 5. VISTA: REGISTRO DE CLIENTES */}
+        {vista === "clientes" && (
+          <div className="space-y-4">
+            <button
+              onClick={() => setVista("centrohistorial")}
+              className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] hover:text-slate-800 transition-colors"
+            >
+              ← Volver al Centro de Historiales
             </button>
             <ListaClientesRegistrados clientes={todosLosClientes} />
           </div>
@@ -251,12 +290,11 @@ export default function Home() {
             >
               ← Volver al Mapa de habitaciones
             </button>
-            <HistorialCajas />{" "}
-            {/* Asegúrate de que este componente esté importado */}
+            <HistorialCajas />
           </div>
         )}
 
-        {/* 4. VISTA: CONTROL DE CAJA Y TURNOS */}
+        {/* 6. VISTA: CONTROL DE CAJA Y TURNOS */}
         {vista === "caja" && (
           <div className="space-y-4">
             <button
@@ -265,12 +303,11 @@ export default function Home() {
             >
               ← Volver al Mapa de Habitaciones
             </button>
-            {/* Renderizamos el panel pasándole el usuario logueado en tiempo real */}
             <PanelCaja usuario={usuarioActivo} />
           </div>
         )}
 
-        {/* vistas de finanzas con egresos e ingresos extras */}
+        {/* Vistas de Finanzas */}
         {vista === "finanzas" && (
           <div className="p-8">
             <button
@@ -279,8 +316,6 @@ export default function Home() {
             >
               ← Volver al mapa
             </button>
-
-            {/* Pasamos el usuario para que VistaFinanzas sepa qué botones mostrar */}
             <VistaFinanzas
               usuario={usuarioActivo}
               onSelect={(v) => setVista(v)}
@@ -299,7 +334,7 @@ export default function Home() {
             <GestionEgresos usuarioActual={usuarioActivo} />
           </div>
         )}
-        {/* 4. VISTA: GESTIÓN DE INGRESOS EXTRAS */}
+
         {vista === "ingresos" && (
           <div className="p-8">
             <button
@@ -308,11 +343,10 @@ export default function Home() {
             >
               ← Volver a Finanzas
             </button>
-
-            {/* Usamos el componente consolidado que ya tiene filtros y lógica de impresión */}
             <GestionIngresos usuario={usuarioActivo} />
           </div>
         )}
+
         {vista === "ingresoshabitaciones" && (
           <div className="space-y-4">
             <button
@@ -324,7 +358,8 @@ export default function Home() {
             <GestionIngresosHabitaciones usuarioActual={usuarioActivo} />
           </div>
         )}
-        {/* 5. VISTA: CAJA CHICA */}
+
+        {/* 7. VISTA: CAJA CHICA */}
         {vista === "cajachica" && (
           <div className="min-h-screen w-full bg-slate-50 p-6 md:p-12 animate-in fade-in duration-500">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -334,11 +369,11 @@ export default function Home() {
               >
                 ← Volver al Mapa de habitaciones
               </button>
-
               <CajaChica usuarioActual={usuarioActivo} />
             </div>
           </div>
         )}
+
         {vista === "datos" && (
           <div className="space-y-4">
             <button
@@ -385,4 +420,3 @@ export default function Home() {
     </main>
   );
 }
-
