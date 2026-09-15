@@ -16,7 +16,7 @@ export function PanelCaja({ usuario }: { usuario: any }) {
   } = useCaja(usuario);
 
   const [montoInicial, setMontoInicial] = useState<number>(0);
-  const [montoCierreReal, setMontoCierreReal] = useState<number>(0);
+  const [montoCierreReal, setMontoCierreReal] = useState<number | string>(0);
   const [mostrarModalCierre, setMostrarModalCierre] = useState(false);
   const [ingresosExtras, setIngresosExtras] = useState<any[]>([]);
 
@@ -141,12 +141,10 @@ export function PanelCaja({ usuario }: { usuario: any }) {
     totalExtrasEfectivo -
     totalEgresos;
 
-  // Función reutilizable para construir el PDF en formato Carta Horizontal ("l", "letter")
   const generarDocumentoPDF = (modo: "descargar" | "visualizar") => {
     const fechaFormatted = formatearFechaTitulo();
-    const doc = new jsPDF("l", "mm", "letter"); // "l" = landscape (horizontal), tamaño letter
+    const doc = new jsPDF("l", "mm", "letter");
 
-    // Título principal (Centro aproximado de hoja carta horizontal es ~139.5 mm)
     doc.setFontSize(14);
     doc.text(`PLANILLA DE RECEPCION ${fechaFormatted}`, 139.5, 15, {
       align: "center",
@@ -170,7 +168,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
       37
     );
 
-    // 1. Tabla de Movimientos
     autoTable(doc, {
       startY: 42,
       head: [
@@ -233,7 +230,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
 
     let currentY = (doc as any).lastAutoTable.finalY + 8;
 
-    // 2. Tabla de Ingresos Extras
     if (ingresosExtras.length > 0) {
       if (currentY > 175) {
         doc.addPage();
@@ -272,7 +268,6 @@ export function PanelCaja({ usuario }: { usuario: any }) {
       currentY = (doc as any).lastAutoTable.finalY + 8;
     }
 
-    // 3. Totales y Firmas (Límite vertical en horizontal carta es ~215mm)
     const espacioNecesarioTotales = totalExtras > 0 ? 65 : 55;
     if (currentY + espacioNecesarioTotales > 190) {
       doc.addPage();
@@ -281,12 +276,12 @@ export function PanelCaja({ usuario }: { usuario: any }) {
 
     const totalGeneralIngresos =
       totalEfectivoIngresos + totalQrIngresos + totalExtras;
-const totalGIngresosHab =
+    const totalGIngresosHab =
       totalEfectivoIngresos + totalQrIngresos;
 
     doc.setFontSize(8);
-     doc.setFont("helvetica", "bold");
-     doc.text(
+    doc.setFont("helvetica", "bold");
+    doc.text(
       `TOTAL HAB: ${totalGIngresosHab.toFixed(2)} Bs.`,
       14,
       currentY
@@ -304,9 +299,8 @@ const totalGIngresosHab =
     );
 
     let offsetExtra = 0;
-    if (totalExtras > 0)
-       {
-         doc.setFont("helvetica", "bold");
+    if (totalExtras > 0) {
+      doc.setFont("helvetica", "bold");
       doc.text(
         `TOTAL EXTRAS :${totalExtras.toFixed(2)} Bs.`,
         14,
@@ -326,28 +320,27 @@ const totalGIngresosHab =
       offsetExtra = 6;
     }
 
-     doc.setFont("helvetica", "bold");
-     doc.text(
-        `TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`,
-        14,
-        currentY + 18 + offsetExtra
-      );
-     doc.setFont("helvetica", "normal");
-     
-     doc.text(
-        `Total QR: ${(totalExtrasQr + totalQrIngresos).toFixed(2)} Bs.`,
-        14,
-        currentY + 28
-      );
-      doc.text(
-        `Total EF: ${(totalExtrasEfectivo + totalEfectivoIngresos).toFixed(2)} Bs.`,
-        14,
-        currentY + 32
-      );
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      `TOTAL INGRESOS: ${totalGeneralIngresos.toFixed(2)} Bs.`,
+      14,
+      currentY + 18 + offsetExtra
+    );
+    doc.setFont("helvetica", "normal");
+    
+    doc.text(
+      `Total QR: ${(totalExtrasQr + totalQrIngresos).toFixed(2)} Bs.`,
+      14,
+      currentY + 28
+    );
+    doc.text(
+      `Total EF: ${(totalExtrasEfectivo + totalEfectivoIngresos).toFixed(2)} Bs.`,
+      14,
+      currentY + 32
+    );
 
     const signatureY = currentY + 35 + offsetExtra;
     doc.setLineWidth(0.5);
-    // Línea de firma centrada para hoja carta horizontal (desde X=100 hasta X=178)
     doc.line(100, signatureY, 178, signatureY);
 
     doc.setFontSize(9);
@@ -372,7 +365,6 @@ const totalGIngresosHab =
 
   return (
     <div className="bg-slate-50 p-4 md:p-8 rounded-3xl shadow-inner min-h-screen space-y-6">
-      {/* Cards de KPIs Financieros */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 max-w-7xl mx-auto">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -417,7 +409,6 @@ const totalGIngresosHab =
       </div>
 
       <div className="max-w-7xl mx-auto bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100">
-        {/* Encabezado */}
         <div className="bg-[#1e293b] p-8 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -436,7 +427,7 @@ const totalGIngresosHab =
               onClick={() => generarDocumentoPDF("visualizar")}
               className="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white font-black px-5 py-3 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md"
             >
-               Ver PDF
+              Ver PDF
             </button>
             <button
               onClick={() => setMostrarModalCierre(true)}
@@ -447,7 +438,6 @@ const totalGIngresosHab =
           </div>
         </div>
 
-       {/* Tabla de Movimientos */}
         <div className="p-6">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
             Planilla Detallada de Movimientos
@@ -631,6 +621,8 @@ const totalGIngresosHab =
 
                 generarDocumentoPDF("descargar");
 
+                const montoFinalNum = Number(montoCierreReal);
+
                 const snapshotDetalle = {
                   movimientos,
                   ingresosExtra: ingresosExtras,
@@ -643,17 +635,17 @@ const totalGIngresosHab =
                     ingresosExtraQr: totalExtrasQr,
                     ingresosExtra: totalExtras,
                     efectivoEsperado: saldoEnCajaTeorico,
-                    montoCierreReal: Number(montoCierreReal),
-                    diferencia: Number(montoCierreReal) - saldoEnCajaTeorico,
+                    montoCierreReal: montoFinalNum,
+                    diferencia: montoFinalNum - saldoEnCajaTeorico,
                   },
                 };
 
-                const res = await cerrarCaja(Number(montoCierreReal), {
+                const res = await cerrarCaja(montoFinalNum, {
                   monto_teorico: saldoEnCajaTeorico,
                   total_efectivo: totalEfectivoIngresos,
                   total_qr: totalQrIngresos,
                   total_extras: totalExtras,
-                  diferencia: Number(montoCierreReal) - saldoEnCajaTeorico,
+                  diferencia: montoFinalNum - saldoEnCajaTeorico,
                   detalle_snapshot: snapshotDetalle,
                 });
 
@@ -686,19 +678,23 @@ const totalGIngresosHab =
                   step="0.01"
                   required
                   min="0"
-                  value={montoCierreReal || ""}
-                  onChange={(e) => setMontoCierreReal(Number(e.target.value))}
+                  value={montoCierreReal}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Permitimos que escriba 0 o vacio de forma fluida
+                    setMontoCierreReal(val === "" ? "" : Number(val));
+                  }}
                   className="w-full border-2 border-slate-100 p-3 rounded-xl font-black text-lg bg-slate-50 text-center outline-none focus:border-rose-500"
                 />
               </div>
 
-              {montoCierreReal !== saldoEnCajaTeorico && (
+              {Number(montoCierreReal) !== saldoEnCajaTeorico && (
                 <div
-                  className={`p-3 rounded-xl text-center text-xs font-bold ${montoCierreReal > saldoEnCajaTeorico ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}
+                  className={`p-3 rounded-xl text-center text-xs font-bold ${Number(montoCierreReal) > saldoEnCajaTeorico ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}
                 >
-                  {montoCierreReal > saldoEnCajaTeorico
-                    ? `Sobrante detectado: +${(montoCierreReal - saldoEnCajaTeorico).toFixed(2)} Bs.`
-                    : `Faltante detectado: ${(montoCierreReal - saldoEnCajaTeorico).toFixed(2)} Bs.`}
+                  {Number(montoCierreReal) > saldoEnCajaTeorico
+                    ? `Sobrante detectado: +${(Number(montoCierreReal) - saldoEnCajaTeorico).toFixed(2)} Bs.`
+                    : `Faltante detectado: ${(Number(montoCierreReal) - saldoEnCajaTeorico).toFixed(2)} Bs.`}
                 </div>
               )}
 
