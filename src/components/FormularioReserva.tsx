@@ -481,7 +481,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
                   <td className="p-3 text-left">{r.fecha_fin}</td>
                   <td className="p-3 text-left">{r.hora_llegada}</td>
                   <td className="p-3 text-left font-semibold">{r.monto_adelanto} Bs.</td>
-                  <td className="p-3 text-left text-slate-600 font-medium">{r.responsable || "N/A"}</td>
+                  <td className="p-3 text-left text-slate-600 font-medium">{r.nombre_encargado || "N/A"}</td>
                   <td className="p-3 text-center text-blue-600 uppercase font-bold text-xs">{r.estado}</td>
                   <td className="p-3 text-center">
                     <button
