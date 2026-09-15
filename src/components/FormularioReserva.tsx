@@ -9,10 +9,11 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
   const [todasLasReservas, setTodasLasReservas] = useState<any[]>([]);
   const [hospedajesActivos, setHospedajesActivos] = useState<any[]>([]);
   const [usuarioActual, setUsuarioActual] = useState<string>("Administrador");
-
+  const [busquedaReserva, setBusquedaReserva] = useState<string>("");
+ 
   const [formData, setFormData] = useState({
     huesped_nombre: "",
-    huesped_telefono: "",
+    huesped_telefono: "", 
     fecha_inicio: new Date().toISOString().split("T")[0],
     fecha_fin: "",
     hora_llegada: "14:00",
@@ -162,7 +163,6 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
       return;
     }
 
- // Normalizar fechas limpiando las horas para evitar desfases
     const [anioInicio, mesInicio, diaInicio] = formData.fecha_inicio.split("-").map(Number);
     const [anioFin, mesFin, diaFin] = formData.fecha_fin.split("-").map(Number);
 
@@ -174,13 +174,26 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
       return;
     }
 
-    // Calcular días exactos de diferencia (noches)
     const diffTime = fin.getTime() - inicio.getTime();
     const diasNoches = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
-    // Si tu hotel cobra un día extra por llegar temprano (ej. antes de las 13:00)
-    const horaInt = parseInt(formData.hora_llegada.split(":")[0]) || 14;
-    const dias = horaInt < 13 ? diasNoches + 1 : diasNoches;
+    // Extracción de hora y minuto para evaluar las horas de cortesía
+    const [horaStr, minutoStr] = formData.hora_llegada.split(":");
+    const horaInt = parseInt(horaStr) || 14;
+    const minutoInt = parseInt(minutoStr) || 0;
+    
+    // Convertir a minutos totales desde las 00:00 para comparar con precisión
+    const minutosTotalesLlegada = (horaInt * 60) + minutoInt;
+    const minutosPermitidosInicio = 5 * 60;  // 05:00 a.m. (300 minutos)
+    const minutosPermitidosFin = 13 * 60;    // 13:00 p.m. (780 minutos)
+
+    let dias = diasNoches;
+    const esHoraCortesia = minutosTotalesLlegada >= minutosPermitidosInicio && minutosTotalesLlegada < minutosPermitidosFin;
+
+    if (!esHoraCortesia && horaInt < 13) {
+      // Si llega antes de las 05:00 a.m. (madrugada), aplica el cargo/día adicional
+      dias = diasNoches + 1;
+    }
 
     const horaFormateada =
       formData.hora_llegada.length === 5
@@ -216,6 +229,7 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
           id_habitacion: idHab,
           nro_habitacion: String(habSeleccionada.numero),
           responsable: usuarioActual,
+          created_at: new Date().toISOString(),
         };
 
         await registrarReservaConAdelanto(
@@ -251,6 +265,20 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
       setCargando(false);
     }
   };
+
+  // Filtrado de reservas por huésped o número de habitación
+  const reservasFiltradas = todasLasReservas.filter((r) => {
+    const textoBusqueda = busquedaReserva.toLowerCase();
+    const nombreHuesped = (r.huesped_nombre || "").toLowerCase();
+    const nroHabitacion = String(r.habitaciones?.numero || "").toLowerCase();
+    const encargado = (r.responsable || "").toLowerCase();
+
+    return (
+      nombreHuesped.includes(textoBusqueda) ||
+      nroHabitacion.includes(textoBusqueda) ||
+      encargado.includes(textoBusqueda)
+    );
+  });
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
@@ -413,45 +441,65 @@ export function FormularioReserva({ onBack }: { onBack: () => void }) {
         </form>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl border">
-        <h3 className="font-black text-slate-400 mb-4 uppercase text-xs">
-          Reservas próximas
-        </h3>
+      <div className="bg-white p-6 rounded-3xl border space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <h3 className="font-black text-slate-400 uppercase text-xs">
+            Reservas próximas ({reservasFiltradas.length})
+          </h3>
+          <input
+            type="text"
+            placeholder="Buscar por huésped, habitación o encargado..."
+            className="w-full md:w-80 p-3 border rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-600"
+            value={busquedaReserva}
+            onChange={(e) => setBusquedaReserva(e.target.value)}
+          />
+        </div>
+
         <table className="w-full text-sm text-left">
           <thead>
             <tr className="text-slate-400 uppercase text-[10px] tracking-widest border-b border-slate-200">
-              <th className="pb-3 text-left">huesped</th>
-              <th className="pb-3 text-center">hab</th>
-              <th className="pb-3 text-left">fecha ingreso</th>
-              <th className="pb-3 text-left">fecha E.final</th>
-              <th className="pb-3 text-left">hora de entrada</th>
-              <th className="pb-3 text-left">Monto</th>
-              <th className="pb-3 text-center">estado</th>
-              <th className="pb-3 text-center">acciones</th>
+              <th className="pb-3 text-left">Huésped</th>
+              <th className="pb-3 text-center">Hab.</th>
+              <th className="pb-3 text-left">Fecha Ingreso</th>
+              <th className="pb-3 text-left">Fecha E. Final</th>
+              <th className="pb-3 text-left">Hora</th>
+              <th className="pb-3 text-left">Adelanto</th>
+              <th className="pb-3 text-left">Encargado</th>
+              <th className="pb-3 text-center">Estado</th>
+              <th className="pb-3 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {todasLasReservas.map((r) => (
-              <tr key={r.id} className="border-t">
-                <td className="p-3 text-left font-bold">{r.huesped_nombre}</td>
-                <td className="p-3 text-center">
-                  Hab. {r.habitaciones?.numero}
-                </td>
-                <td className="p-3 text-left">{r.fecha_inicio}</td>
-                <td className="p-3 text-left">{r.fecha_fin}</td>
-                <td className="p-3 text-left">{r.hora_llegada}</td>
-                <td className="p-3 text-left">{r.monto_adelanto}</td>
-                <td className="p-3 text-center text-blue-600 uppercase font-bold text-xs">{r.estado}</td>
-                <td className="p-3 text-center">
-                  <button
-                    onClick={() => cancelarReserva(r.id)}
-                    className="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white px-3 py-1.5 rounded-xl font-black text-[10px] uppercase transition-all shadow-sm"
-                  >
-                    Cancelar
-                  </button>
+            {reservasFiltradas.length > 0 ? (
+              reservasFiltradas.map((r) => (
+                <tr key={r.id} className="border-t hover:bg-slate-50">
+                  <td className="p-3 text-left font-bold">{r.huesped_nombre}</td>
+                  <td className="p-3 text-center font-semibold">
+                    Hab. {r.habitaciones?.numero}
+                  </td>
+                  <td className="p-3 text-left">{r.fecha_inicio}</td>
+                  <td className="p-3 text-left">{r.fecha_fin}</td>
+                  <td className="p-3 text-left">{r.hora_llegada}</td>
+                  <td className="p-3 text-left font-semibold">{r.monto_adelanto} Bs.</td>
+                  <td className="p-3 text-left text-slate-600 font-medium">{r.responsable || "N/A"}</td>
+                  <td className="p-3 text-center text-blue-600 uppercase font-bold text-xs">{r.estado}</td>
+                  <td className="p-3 text-center">
+                    <button
+                      onClick={() => cancelarReserva(r.id)}
+                      className="bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white px-3 py-1.5 rounded-xl font-black text-[10px] uppercase transition-all shadow-sm"
+                    >
+                      Cancelar
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={9} className="p-6 text-center text-slate-400 font-medium">
+                  No se encontraron reservas con ese criterio de búsqueda.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
