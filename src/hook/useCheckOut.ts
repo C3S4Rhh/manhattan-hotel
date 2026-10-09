@@ -48,13 +48,17 @@ export function useCheckOut(hab: any, onSuccess: () => void) {
   }, [hab.id])
 
   const calcularSaldoFinal = () => {
-  const precioBase = Number(registro?.precio_acordado || 0);
-  const precioPorDia = precioBase / (registro?.cantidad_dias || 1); 
-  const aumento = diasExtra * precioPorDia;
-  const subtotal = precioBase + aumento;
-  const totalConDescuento = subtotal - descuentoMonto;
-  const aCuenta = Number(registro?.a_cuenta || 0);
-  return totalConDescuento - aCuenta;
+    const precioTotalAcumulado = Number(registro?.precio_acordado || 0);
+    const totalDiasOriginales = Number(registro?.cantidad_dias || 1);
+    const precioHabitacionActual = Number(hab?.precio_base || registro?.habitaciones?.precio_base || 150); 
+    const aumentoDiasExtra = (Number(diasExtra) || 0) * precioHabitacionActual; 
+    
+    const subtotal = precioTotalAcumulado + aumentoDiasExtra;
+    const totalConDescuento = subtotal - (Number(descuentoMonto) || 0);
+    const aCuenta = Number(registro?.a_cuenta || 0);
+    
+    const resultado = totalConDescuento - aCuenta;
+    return Number(resultado.toFixed(2));
   };
 
   const saldoFinal = calcularSaldoFinal();
