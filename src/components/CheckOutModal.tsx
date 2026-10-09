@@ -10,7 +10,7 @@ export function CheckOutModal({
   hab,
   onClose,
   onSuccess,
-  onVerEstado
+  onVerEstado,
 }: {
   hab: any;
   onClose: () => void;
@@ -23,7 +23,7 @@ export function CheckOutModal({
   const [pagoQR, setPagoQR] = useState(0);
   const [abiertoCambio, setAbiertoCambio] = useState(false);
   const [cargandoRegistro, setCargandoRegistro] = useState(false);
-  
+
   // Nuevo estado para prevenir doble clic en registrar pago
   const [registrandoPago, setRegistrandoPago] = useState(false);
 
@@ -56,9 +56,13 @@ export function CheckOutModal({
   // Obtener el usuario autenticado actual desde Supabase
   useEffect(() => {
     const obtenerUsuario = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
-        setUsuarioActual(user.user_metadata?.full_name || user.email || "Usuario Anónimo");
+        setUsuarioActual(
+          user.user_metadata?.full_name || user.email || "Usuario Anónimo",
+        );
       }
     };
     obtenerUsuario();
@@ -150,14 +154,20 @@ export function CheckOutModal({
           descuento_monto: descuentoMonto,
           observaciones: textoObservacion,
           responsable_ultimo_cambio: usuarioActual,
-          ultima_modificacion_at: new Date().toISOString()
+          ultima_modificacion_at: new Date().toISOString(),
         })
         .eq("id", registro.id);
     };
 
     const timer = setTimeout(guardarAjustes, 300);
     return () => clearTimeout(timer);
-  }, [diasExtra, descuentoMonto, justificacionDescuento, registro?.id, usuarioActual]);
+  }, [
+    diasExtra,
+    descuentoMonto,
+    justificacionDescuento,
+    registro?.id,
+    usuarioActual,
+  ]);
 
   // Función para manejar el botón Volver asegurando que guarde con auditoría antes de cerrar
   const handleVolver = async () => {
@@ -173,7 +183,7 @@ export function CheckOutModal({
           descuento_monto: descuentoMonto,
           observaciones: textoObservacion,
           responsable_ultimo_cambio: usuarioActual,
-          ultima_modificacion_at: new Date().toISOString()
+          ultima_modificacion_at: new Date().toISOString(),
         })
         .eq("id", registro.id);
     }
@@ -320,7 +330,7 @@ export function CheckOutModal({
                 Días
               </p>
               <p className="text-xl font-black text-blue-700">
-                {diasExtra+registro?.cantidad_dias || 0}
+                {diasExtra + registro?.cantidad_dias || 0}
               </p>
             </div>
           </div>
@@ -399,7 +409,7 @@ export function CheckOutModal({
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                   onChange={(e) =>
                     setDescuentoMonto(
-                      Math.max(0, parseFloat(e.target.value) || 0)
+                      Math.max(0, parseFloat(e.target.value) || 0),
                     )
                   }
                   className="w-full p-2 rounded-lg border text-sm font-bold text-emerald-600"
@@ -487,7 +497,9 @@ export function CheckOutModal({
             onClick={handleRegistrarPagoParcial}
             disabled={registrandoPago}
             className={`bg-blue-600 text-white font-black py-3 rounded-lg w-full transition-all ${
-              registrandoPago ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
+              registrandoPago
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-blue-700"
             }`}
           >
             {registrandoPago ? "Procesando Pago..." : "Registrar Pago (Abono)"}
