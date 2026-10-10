@@ -106,7 +106,7 @@ export function DashboardHeader({
           </p>
         </div>
 
-        {/* Grupo de botones responsivo */}
+        {/* Grupo responsivo */}
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full xl:w-auto justify-start xl:justify-end">
           
           {/* Botón de Avisos y Notas de Turno */}
