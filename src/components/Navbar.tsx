@@ -117,7 +117,12 @@ export function Navbar({
               </h1>
             </div>
 
-            {/* Botón Hamburguesa junto al logo para mejor acceso móvil */}
+           
+          </div>
+
+          {/* Lado Derecho: Usuario y Cerrar Turno */}
+          <div className="flex items-center gap-3">
+             {/* Botón Hamburguesa junto al logo para mejor acceso móvil */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="ml-2 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-black transition-all border border-slate-700 flex items-center gap-1.5"
@@ -126,10 +131,6 @@ export function Navbar({
               <span>{isOpen ? "✕" : "☰"}</span>
               <span className="text-[10px] uppercase hidden sm:inline">{isOpen ? "Cerrar" : "Menú"}</span>
             </button>
-          </div>
-
-          {/* Lado Derecho: Usuario y Cerrar Turno */}
-          <div className="flex items-center gap-3">
             {/* Información del Usuario */}
             <div className="text-right border-r border-slate-700 pr-3 sm:pr-6 hidden md:block">
               <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
