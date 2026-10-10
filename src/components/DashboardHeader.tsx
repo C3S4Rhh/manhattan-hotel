@@ -91,9 +91,10 @@ export function DashboardHeader({
 
   return (
     <>
-      <div className="flex justify-between items-center mb-8">
+      {/* Contenedor flexible adaptable a móviles y escritorio */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
         <div className="flex flex-col">
-          <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-800 uppercase tracking-tighter">
             {verHuespedes
               ? "Directorio de Huéspedes"
               : soloOcupadas
@@ -105,16 +106,19 @@ export function DashboardHeader({
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* Grupo de botones responsivo */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full xl:w-auto justify-start xl:justify-end">
+          
           {/* Botón de Avisos y Notas de Turno */}
           <button
             onClick={() => {
               setIsNotaOpen(true);
               cargarNotas();
             }}
-            className="flex items-center gap-3 bg-amber-50 p-1 px-4 rounded-2xl shadow-sm border border-amber-100 hover:bg-amber-100 transition-all relative"
+            className="flex items-center gap-2 bg-amber-50 p-2 px-3 rounded-2xl shadow-sm border border-amber-100 hover:bg-amber-100 transition-all relative"
+            title="Avisos y Notas"
           >
-            <div className="bg-white p-1.5 rounded-lg shadow-sm">📝</div>
+            <div className="bg-white p-1 rounded-lg shadow-sm text-xs">📝</div>
             {notas.length > 0 && (
               <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded-full shadow animate-pulse">
                 {notas.length}
@@ -125,10 +129,10 @@ export function DashboardHeader({
           {/* Botón de Registros */}
           <button
             onClick={onRegistrosClick}
-            className="flex items-center gap-3 bg-indigo-50 p-1 px-5 rounded-2xl shadow-sm border border-indigo-100 hover:bg-indigo-100 transition-all"
+            className="flex items-center gap-2 bg-indigo-50 py-2 px-3 sm:px-4 rounded-2xl shadow-sm border border-indigo-100 hover:bg-indigo-100 transition-all"
           >
-            <div className="bg-white p-1.5 rounded-lg shadow-sm">📋</div>
-            <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700">
+            <div className="bg-white p-1 rounded-lg shadow-sm text-xs">📋</div>
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-indigo-700">
               Registros
             </span>
           </button>
@@ -136,10 +140,10 @@ export function DashboardHeader({
           {/* Botón exclusivo para Reservas */}
           <button
             onClick={onReservasClick}
-            className="flex items-center gap-3 bg-emerald-50 p-1 px-5 rounded-2xl shadow-sm border border-emerald-100 hover:bg-emerald-100 transition-all"
+            className="flex items-center gap-2 bg-emerald-50 py-2 px-3 sm:px-4 rounded-2xl shadow-sm border border-emerald-100 hover:bg-emerald-100 transition-all"
           >
-            <div className="bg-white p-1.5 rounded-lg shadow-sm">🗓️</div>
-            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700">
+            <div className="bg-white p-1 rounded-lg shadow-sm text-xs">🗓️</div>
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-emerald-700">
               Reservas
             </span>
           </button>
@@ -150,18 +154,18 @@ export function DashboardHeader({
               setVerHuespedes(!verHuespedes);
               if (soloOcupadas) setSoloOcupadas(false);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl shadow-sm border transition-all ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-2xl shadow-sm border transition-all ${
               verHuespedes
                 ? "bg-slate-800 text-white border-slate-800 shadow-lg"
                 : "bg-white text-slate-800 border-slate-100 hover:bg-slate-50"
             }`}
           >
-            <span className="text-lg">👥</span>
+            <span className="text-sm sm:text-base">👥</span>
             <div className="text-left">
-              <p className="text-[10px] font-black uppercase leading-none tracking-tighter text-slate-400">
+              <p className="text-[9px] font-black uppercase leading-none tracking-tighter text-slate-400">
                 En Casa
               </p>
-              <p className="text-sm font-black">{cantidadHuespedes} Huéspedes</p>
+              <p className="text-xs sm:text-sm font-black whitespace-nowrap">{cantidadHuespedes} Huéspedes</p>
             </div>
           </button>
 
@@ -171,7 +175,7 @@ export function DashboardHeader({
               setSoloOcupadas(!soloOcupadas);
               if (verHuespedes) setVerHuespedes(false);
             }}
-            className={`px-4 py-4 rounded-xl font-black text-[10px] uppercase transition-all ${
+            className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-black text-[10px] uppercase transition-all whitespace-nowrap ${
               soloOcupadas
                 ? "bg-rose-600 text-white shadow-lg shadow-rose-200"
                 : "bg-white text-slate-600 border-2 border-slate-100 hover:border-blue-400"
@@ -180,13 +184,13 @@ export function DashboardHeader({
             {soloOcupadas ? "Ver Todo" : "🔔 Pendientes de Salida"}
           </button>
 
-          {/* Botón de Centro de Historiales (Reemplazó a Reg. de Clientes) */}
+          {/* Botón de Centro de Historiales */}
           <button
             onClick={onHistorialesClick}
-            className="flex items-center gap-3 bg-white p-1 px-5 rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-all"
+            className="flex items-center gap-2 bg-white py-2 px-3 sm:px-4 rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-all"
           >
-            <div className="bg-indigo-50 p-1.5 rounded-lg">📜</div>
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+            <div className="bg-indigo-50 p-1 rounded-lg text-xs">📜</div>
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-700 whitespace-nowrap">
               Hist. Clientes
             </span>
           </button>
@@ -194,10 +198,10 @@ export function DashboardHeader({
           {/* Botón Habitaciones */}
           <button
             onClick={onConfigClick}
-            className="flex items-center gap-3 bg-white p-1 px-5 rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-all"
+            className="flex items-center gap-2 bg-white py-2 px-3 sm:px-4 rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-all"
           >
-            <div className="bg-orange-50 p-1.5 rounded-lg">⚙️</div>
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+            <div className="bg-orange-50 p-1 rounded-lg text-xs">⚙️</div>
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-700 whitespace-nowrap">
               Habitaciones
             </span>
           </button>
@@ -211,7 +215,7 @@ export function DashboardHeader({
             <div className="flex justify-between items-center px-6 py-4 bg-amber-50 border-b border-amber-100">
               <div className="flex items-center gap-2">
                 <span className="text-xl">📌</span>
-                <h3 className="font-black text-amber-900 uppercase tracking-tight text-sm">
+                <h3 className="font-black text-amber-900 uppercase tracking-tight text-xs sm:text-sm">
                   Avisos y Notas de Turno (Compartido)
                 </h3>
               </div>
@@ -223,7 +227,7 @@ export function DashboardHeader({
               </button>
             </div>
 
-            <form onSubmit={agregarNota} className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
+            <form onSubmit={agregarNota} className="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-3">
               <textarea
                 value={nuevoTexto}
                 onChange={(e) => setNuevoTexto(e.target.value)}
@@ -242,7 +246,7 @@ export function DashboardHeader({
               </div>
             </form>
 
-            <div className="p-6 overflow-y-auto flex flex-col gap-3 flex-1">
+            <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-3 flex-1">
               {notas.length === 0 ? (
                 <p className="text-center text-xs text-slate-400 py-8">
                   No hay avisos registrados en este momento.
@@ -253,8 +257,8 @@ export function DashboardHeader({
                     key={nota.id}
                     className="p-4 rounded-2xl bg-amber-50/40 border border-amber-100 flex flex-col gap-2 relative group"
                   >
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-black uppercase text-amber-900 bg-amber-100/60 px-2.5 py-0.5 rounded-lg">
+                    <div className="flex justify-between items-center flex-wrap gap-2">
+                      <span className="text-[10px] sm:text-[11px] font-black uppercase text-amber-900 bg-amber-100/60 px-2.5 py-0.5 rounded-lg">
                         👤 {nota.usuario_nombre}
                       </span>
                       <div className="flex items-center gap-3">
