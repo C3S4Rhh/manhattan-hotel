@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
@@ -18,18 +17,18 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
   const [numPersonas, setNumPersonas] = useState(1);
   const [diasEstadia, setDiasEstadia] = useState(1);
   const [huespedes, setHuespedes] = useState([
-    { nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '',estado_civil: '' }
+    { nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '', estado_civil: '' }
   ]);
   const [fechaIngreso, setFechaIngreso] = useState('');
   const [precioFinal, setPrecioFinal] = useState(hab?.precio_base || 0);
- 
+  
   const [cargando, setCargando] = useState(false);
 
   const [pagoEfectivo, setPagoEfectivo] = useState(0);
   const [pagoQR, setPagoQR] = useState(0);
   const [estadoLimpieza, setEstadoLimpieza] = useState('limpio');
 
-   const adelanto = Number(pagoEfectivo) + Number(pagoQR);
+  const adelanto = Number(pagoEfectivo) + Number(pagoQR);
 
   useEffect(() => {
     const ahora = new Date();
@@ -37,25 +36,25 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     const localISOTime = new Date(ahora.getTime() - offset).toISOString().slice(0, 16);
     setFechaIngreso(localISOTime);
   }, []);
-// 1. Agrega un estado para guardar el  base original (para no perderlo al multiplicar)
-const [precioBaseUnitario, setPrecioBaseUnitario] = useState(hab?.precio_base || 0);
-const manejarCambioDias = (nuevosDias: number) => {
-  setDiasEstadia(nuevosDias);
-  // Multiplicas el precio base original por los nuevos días
-  setPrecioFinal(precioBaseUnitario * nuevosDias);
-};
 
-// 3. (Opcional) Si el usuario edita el precio manualmente, actualiza el precioBaseUnitario
-const actualizarPrecioManual = (nuevoPrecio: number) => {
-  setPrecioBaseUnitario(nuevoPrecio); // Esto evita que el cálculo se sobrescriba mal
-  setPrecioFinal(nuevoPrecio * diasEstadia);
-};
+  const [precioBaseUnitario, setPrecioBaseUnitario] = useState(hab?.precio_base || 0);
+
+  const manejarCambioDias = (nuevosDias: number) => {
+    setDiasEstadia(nuevosDias);
+    setPrecioFinal(precioBaseUnitario * nuevosDias);
+  };
+
+  const actualizarPrecioManual = (nuevoPrecio: number) => {
+    setPrecioBaseUnitario(nuevoPrecio);
+    setPrecioFinal(nuevoPrecio * diasEstadia);
+  };
+
   const manejarCambioPersonas = (n: number) => {
     setNumPersonas(n);
     const nuevoArray = [...huespedes];
     if (n > huespedes.length) {
       while (nuevoArray.length < n) {
-        nuevoArray.push({ nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '',estado_civil: '' });
+        nuevoArray.push({ nombre: '', documento: '', profesion: '', celular: '', nacionalidad: '', fecha_nacimiento: '', estado_civil: '' });
       }
     } else {
       nuevoArray.splice(n);
@@ -71,7 +70,6 @@ const actualizarPrecioManual = (nuevoPrecio: number) => {
 
   const autoCompletarHuesped = (index: number, datosCompletos: any) => {
     const nuevosHuespedes = [...huespedes];
-    // Asegurar valores por defecto para evitar bloqueos de validación del navegador
     nuevosHuespedes[index] = { 
       ...datosCompletos,
       nacionalidad: datosCompletos.nacionalidad || 'Boliviana'
@@ -128,11 +126,10 @@ const actualizarPrecioManual = (nuevoPrecio: number) => {
           id_usuario: usuario?.id,
           nombre_huesped: huespedes[0].nombre,
           pax: numPersonas,
-
           precio_acordado: Number(precioFinal),
           adelanto: Number(adelanto),
           pago_efectivo: Number(pagoEfectivo),
-        pago_qr: Number(pagoQR),
+          pago_qr: Number(pagoQR),
           saldo_pendiente: saldo,
           fecha_ingreso: fechaIngreso,
           estado: 'activo'
@@ -140,39 +137,38 @@ const actualizarPrecioManual = (nuevoPrecio: number) => {
 
       if (errorCheckIn) throw errorCheckIn;
 
-   // 3. REGISTRO EN CAJA (Corregido: Usa precioFinal y formato de observación)
-if (Number(adelanto) > 0) {
-  const { data: sesionAbierta } = await supabase
-    .from('caja_sesiones')
-    .select('id')
-    .eq('estado', 'abierta')
-    .maybeSingle();
+      // 3. REGISTRO EN CAJA
+      if (Number(adelanto) > 0) {
+        const { data: sesionAbierta } = await supabase
+          .from('caja_sesiones')
+          .select('id')
+          .eq('estado', 'abierta')
+          .maybeSingle();
 
-  const { error: errorCaja } = await supabase
-    .from('caja_movimientos') 
-    .insert([{
-      id_sesion: sesionAbierta?.id || null,
-      id_usuario: usuario?.id,
-      id_habitacion: hab.id,
-      nro_habitacion: String(hab.numero),
-      tipo_movimiento: 'ingreso',
-      categoria: 'hospedaje_extra', // Asegúrate de usar la categoría correcta que esperas ver
-      monto_total: Number(precioFinal), // Toma el precio total editado
-      monto_efectivo: Number(pagoEfectivo), // Nuevo campo
-      monto_qr: Number(pagoQR),             // Nuevo campo
-      monto_a_cuenta: Number(adelanto), // Toma el adelanto registrado
-      monto_saldo: saldo,             // El saldo restante calculado
-      cantidad_dias: diasEstadia,  
-      huesped_referencia: huespedes[0].nombre,
-      // Formato de observación idéntico a tus registros anteriores
-      observaciones: `Check-In Hab. #${hab?.numero} por ${diasEstadia} día(s).- Con deuda - Queda pendiente un saldo de ${saldo} Bs.`,
-      fecha: new Date().toISOString()
-    }]);
+        const { error: errorCaja } = await supabase
+          .from('caja_movimientos') 
+          .insert([{
+            id_sesion: sesionAbierta?.id || null,
+            id_usuario: usuario?.id,
+            id_habitacion: hab.id,
+            nro_habitacion: String(hab.numero),
+            tipo_movimiento: 'ingreso',
+            categoria: 'hospedaje_extra',
+            monto_total: Number(precioFinal),
+            monto_efectivo: Number(pagoEfectivo),
+            monto_qr: Number(pagoQR),
+            monto_a_cuenta: Number(adelanto),
+            monto_saldo: saldo,
+            cantidad_dias: diasEstadia,  
+            huesped_referencia: huespedes[0].nombre,
+            observaciones: `Check-In Hab. #${hab?.numero} por ${diasEstadia} día(s).- Con deuda - Queda pendiente un saldo de ${saldo} Bs.`,
+            fecha: new Date().toISOString()
+          }]);
 
-  if (errorCaja) {
-    console.error("Error al registrar en caja_movimientos:", errorCaja);
-  }
-}
+        if (errorCaja) {
+          console.error("Error al registrar en caja_movimientos:", errorCaja);
+        }
+      }
 
       // 4. Registro de Clientes y Detalle Relacional
       for (const h of huespedes) {
@@ -201,14 +197,20 @@ if (Number(adelanto) > 0) {
         });
       }
 
-      // 5. Actualizar habitación
-     const { error: errorHabitacion } = await supabase
-  .from('habitaciones')
-  .update({
-    estado_actual: 'O',          // Cambia a ocupada
-    estado_limpieza: estadoLimpieza, // Aquí envías 'limpio' o 'lo'
-  })
-  .eq('id', hab.id);
+      // 5. Actualizar habitación (Estado Ocupada, Limpieza y PRECIO BASE ACTUALIZADO)
+      const nuevoPrecioUnitarioCalculado = Number(precioFinal) / Number(diasEstadia);
+
+      const { error: errorHabitacion } = await supabase
+        .from('habitaciones')
+        .update({
+          estado_actual: 'O',
+          estado_limpieza: estadoLimpieza,
+          precio_base: nuevoPrecioUnitarioCalculado, // <-- ¡Aquí se refleja y guarda el cambio automáticamente!
+        })
+        .eq('id', hab.id);
+
+      if (errorHabitacion) throw errorHabitacion;
+
       onSuccess();
     } catch (error: any) {
       console.error("Error detallado:", error);
@@ -219,14 +221,27 @@ if (Number(adelanto) > 0) {
   };
 
   return {
-    numPersonas,diasEstadia,      // <--- AÑADE ESTO
-  manejarCambioDias, huespedes, fechaIngreso, precioFinal, adelanto, cargando,
-    pagoEfectivo, setPagoEfectivo, // Exportar nuevos estados
-    pagoQR, setPagoQR,
-    estadoLimpieza, setEstadoLimpieza,
-    setPrecioFinal,precioBaseUnitario,      
-    setPrecioBaseUnitario, setFechaIngreso,
-    manejarCambioPersonas, actualizarHuesped, autoCompletarHuesped, registrarIngreso
-    
+    numPersonas,
+    diasEstadia,
+    manejarCambioDias,
+    huespedes,
+    fechaIngreso,
+    precioFinal,
+    adelanto,
+    cargando,
+    pagoEfectivo,
+    setPagoEfectivo,
+    pagoQR,
+    setPagoQR,
+    estadoLimpieza,
+    setEstadoLimpieza,
+    setPrecioFinal,
+    precioBaseUnitario,      
+    setPrecioBaseUnitario,
+    setFechaIngreso,
+    manejarCambioPersonas,
+    actualizarHuesped,
+    autoCompletarHuesped,
+    registrarIngreso
   };
 }
