@@ -132,7 +132,7 @@ const registrarPagoParcial = async (efectivo: number, qr: number) => {
 
     if (errorCaja) throw errorCaja;
 
-    // 3. Actualizar saldo en hospedajes
+    //  Actualizar saldo en hospedajes
     await supabase
       .from('hospedajes')
       .update({ a_cuenta: (registro.a_cuenta || 0) + montoTotal })
