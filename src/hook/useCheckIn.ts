@@ -37,7 +37,7 @@ export function useCheckIn(hab: any, usuario: any, onSuccess: () => void) {
     const localISOTime = new Date(ahora.getTime() - offset).toISOString().slice(0, 16);
     setFechaIngreso(localISOTime);
   }, []);
-// 1. Agrega un estado para guardar el precio base original (para no perderlo al multiplicar)
+// 1. Agrega un estado para guardar el  base original (para no perderlo al multiplicar)
 const [precioBaseUnitario, setPrecioBaseUnitario] = useState(hab?.precio_base || 0);
 const manejarCambioDias = (nuevosDias: number) => {
   setDiasEstadia(nuevosDias);
